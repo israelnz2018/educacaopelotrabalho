@@ -1,3 +1,7 @@
-gunicorn
 flask
+openai
 gspread
+oauth2client
+pandas
+matplotlib
+gunicorn
