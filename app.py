@@ -1,6 +1,8 @@
+import json
+import os
 from flask import Flask, request, jsonify
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -13,21 +15,26 @@ def home():
 @app.route("/executar", methods=["POST"])
 def executar():
     try:
-        # Dados recebidos do webhook
-        data = request.get_json()
-        aluno = data.get("aluno")
-        prompt = data.get("prompt")
+        aluno_aba = request.args.get("aluno")
+        if not aluno_aba:
+            return jsonify({"erro": "Nome da aba do aluno não fornecido na URL"}), 400
 
-        # Acesso à planilha
-        scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-        creds = ServiceAccountCredentials.from_json_keyfile_name("credenciais.json", scope)
+        # Autenticação com a planilha usando a variável de ambiente
+        credentials_json = os.environ.get("GOOGLE_CREDENTIALS_JSON")
+        creds_dict = json.loads(credentials_json)
+        creds = Credentials.from_service_account_info(creds_dict, scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"])
         client = gspread.authorize(creds)
         planilha = client.open("educacaopelotrabalho")
-        aba = planilha.worksheet(aluno)
+        aba = planilha.worksheet(aluno_aba)
 
-        # Pega os dados da planilha
-        dados = aba.get_all_values()[2:]
-        df = pd.DataFrame(dados, columns=aba.row_values(2))
+        # Resto do seu código de leitura, análise e escrita na planilha...
+
+        return jsonify({"status": "sucesso", "mensagem": f"Análise realizada para o aluno {aluno_aba}!"})
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
 
         # Cria gráfico simples
         plt.figure()
