@@ -1,18 +1,13 @@
 fastapi
-Flask
-gunicorn
+uvicorn
 pandas
-scipy
-statsmodels
 matplotlib
 seaborn
-openpyxl
-openai
-gspread
-oauth2client
-google-api-python-client
 scikit-learn
+statsmodels
+openpyxl
 python-multipart
+
 
 
 
