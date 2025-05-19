@@ -12,5 +12,7 @@ gspread
 oauth2client
 google-api-python-client
 scikit-learn
+python-multipart
+
 
 
