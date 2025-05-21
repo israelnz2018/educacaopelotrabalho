@@ -135,8 +135,8 @@ GRAFICOS = {
 @app.post("/analise")
 async def analisar(
     file: UploadFile = File(...),
-    ferramenta_estatistica: str = Form(None),
-    ferramenta_grafica: str = Form(None),
+    ferramenta: str = Form(None),
+    grafico: str = Form(None),
     coluna_y: str = Form(None),
     colunas_x: str = Form(None)
 ):
@@ -193,15 +193,15 @@ async def analisar(
         resultado_texto = None
         imagem_base64 = None
 
-        if ferramenta_estatistica and ferramenta_estatistica.strip():
-            funcao = ANALISES.get(ferramenta_estatistica.strip())
+        if ferramenta and ferramenta.strip():
+            funcao = ANALISES.get(ferramenta.strip())
 
             if not funcao:
                 return JSONResponse(content={"erro": "Análise estatística desconhecida."}, status_code=400)
             resultado_texto, imagem_base64 = funcao(df, colunas_usadas)
 
-        elif ferramenta_grafica:
-            funcao = GRAFICOS.get(ferramenta_grafica)
+        elif grafico:
+            funcao = GRAFICOS.get(grafico)
             if not funcao:
                 return JSONResponse(content={"erro": "Gráfico desconhecido."}, status_code=400)
             imagem_base64 = funcao(df, colunas_usadas)
