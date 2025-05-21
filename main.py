@@ -163,7 +163,7 @@ async def analisar(
             df = pd.read_csv(sheet_url)
         elif file and file.filename.endswith(".xlsx"):
             file_bytes = await file.read()
-            df = pd.read_excel(io.BytesIO(file_bytes))
+            df = pd.read_excel(io.BytesIO(file_bytes), engine="openpyxl")
         else:
             return JSONResponse(content={"erro": "Envie um arquivo Excel ou link válido do Google Sheets."}, status_code=400)
 
