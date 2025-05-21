@@ -14,10 +14,24 @@ app = FastAPI()
 
 # 📊 Funções de análise estatística
 def analise_regressao_linear_simples(df, colunas):
-    X = pd.to_numeric(df[colunas[0]], errors="coerce")
-    Y = pd.to_numeric(df[colunas[1]], errors="coerce")
+    X = (
+        df[colunas[0]]
+        .astype(str)
+        .str.strip()
+        .str.replace(",", ".")
+        .str.replace(r"[^\d\.\-]", "", regex=True)
+    )
+    Y = (
+        df[colunas[1]]
+        .astype(str)
+        .str.strip()
+        .str.replace(",", ".")
+        .str.replace(r"[^\d\.\-]", "", regex=True)
+    )
 
-    # Remove valores inválidos
+    X = pd.to_numeric(X, errors="coerce")
+    Y = pd.to_numeric(Y, errors="coerce")
+
     validos = ~(X.isna() | Y.isna())
     X = X[validos]
     Y = Y[validos]
