@@ -144,10 +144,15 @@ async def analisar(
     colunas_x: str = Form(None)
 ):
     try:
+        file_bytes = await file.read()
+
         if file.filename.endswith(".csv"):
-            df = pd.read_csv(io.BytesIO(await file.read()))
+            try:
+                df = pd.read_csv(io.BytesIO(file_bytes), encoding="utf-8")
+            except UnicodeDecodeError:
+                df = pd.read_csv(io.BytesIO(file_bytes), encoding="latin1")
         elif file.filename.endswith(".xlsx"):
-            df = pd.read_excel(io.BytesIO(await file.read()))
+            df = pd.read_excel(io.BytesIO(file_bytes))
         else:
             return JSONResponse(content={"erro": "Formato de arquivo inválido."}, status_code=400)
 
@@ -161,6 +166,11 @@ async def analisar(
 
         if not colunas_usadas:
             return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
+
+        # Valida se todas as colunas existem no DataFrame
+        for col in colunas_usadas:
+            if col not in df.columns:
+                return JSONResponse(content={"erro": f"Coluna '{col}' não encontrada no arquivo."}, status_code=400)
 
         resultado_texto = None
         imagem_base64 = None
@@ -187,6 +197,10 @@ async def analisar(
         }
 
     except Exception as e:
-        return JSONResponse(content={"erro": str(e)}, status_code=500)
+        return JSONResponse(
+            content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)},
+            status_code=500
+        )
+
 
 
