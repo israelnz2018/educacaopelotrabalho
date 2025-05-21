@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, Form 
+from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import JSONResponse
 import pandas as pd
 import io
@@ -12,8 +12,7 @@ import numpy as np
 
 app = FastAPI()
 
-# 📊 Funções de análises de regressão com gráfico
-
+# 📊 Funções de análise estatística
 def analise_regressao_linear_simples(df, colunas):
     X = df[colunas[0]]
     Y = df[colunas[1]]
@@ -56,8 +55,7 @@ def analise_regressao_logistica_binaria(df, colunas):
     plt.legend()
     return resumo, salvar_grafico()
 
-# 📈 Gráficos independentes
-
+# 📈 Gráficos
 def grafico_boxplot(df, colunas):
     plt.figure(figsize=(8, 6))
     if len(colunas) == 1:
@@ -110,7 +108,7 @@ def grafico_serie_temporal(df, colunas):
     plt.legend()
     return salvar_grafico()
 
-# Utilitário para salvar gráfico em base64
+# Utilitário para salvar imagem
 def salvar_grafico():
     caminho = "grafico.png"
     plt.tight_layout()
@@ -122,7 +120,6 @@ def salvar_grafico():
     return img_base64
 
 # Dicionários
-
 ANALISES = {
     "regressao_linear_simples": analise_regressao_linear_simples,
     "regressao_linear_multipla": analise_regressao_linear_multipla,
@@ -143,7 +140,8 @@ async def analisar(
     file: UploadFile = File(...),
     ferramenta_estatistica: str = Form(None),
     ferramenta_grafica: str = Form(None),
-    colunas: str = Form(...)
+    coluna_y: str = Form(None),
+    colunas_x: str = Form(None)
 ):
     try:
         if file.filename.endswith(".csv"):
@@ -153,7 +151,17 @@ async def analisar(
         else:
             return JSONResponse(content={"erro": "Formato de arquivo inválido."}, status_code=400)
 
-        colunas_usadas = [col.strip() for col in colunas.split(",")]
+        colunas_usadas = []
+
+        if coluna_y:
+            colunas_usadas.append(coluna_y.strip())
+
+        if colunas_x:
+            colunas_usadas += [c.strip() for c in colunas_x.split(",") if c.strip()]
+
+        if not colunas_usadas:
+            return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
+
         resultado_texto = None
         imagem_base64 = None
 
@@ -180,4 +188,5 @@ async def analisar(
 
     except Exception as e:
         return JSONResponse(content={"erro": str(e)}, status_code=500)
+
 
