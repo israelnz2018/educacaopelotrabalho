@@ -193,8 +193,9 @@ async def analisar(
         resultado_texto = None
         imagem_base64 = None
 
-        if ferramenta_estatistica:
-            funcao = ANALISES.get(ferramenta_estatistica)
+        if ferramenta_estatistica and ferramenta_estatistica.strip():
+            funcao = ANALISES.get(ferramenta_estatistica.strip())
+
             if not funcao:
                 return JSONResponse(content={"erro": "Análise estatística desconhecida."}, status_code=400)
             resultado_texto, imagem_base64 = funcao(df, colunas_usadas)
