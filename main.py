@@ -165,8 +165,6 @@ async def analisar(
     colunas_x: str = Form(None)
 ):
     try:
-        import csv  # garantir que está no topo do seu script
-
         def interpretar_coluna(df, valor):
             valor = valor.strip()
             if len(valor) == 1 and valor.upper() in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
@@ -181,23 +179,13 @@ async def analisar(
 
         if file.filename.endswith(".csv"):
             try:
-                content = file_bytes.decode("utf-8")
+                df = pd.read_csv(io.BytesIO(file_bytes), encoding="utf-8")
             except UnicodeDecodeError:
-                content = file_bytes.decode("latin1")
-
-            try:
-                dialect = csv.Sniffer().sniff(content.splitlines()[0])
-                delimiter = dialect.delimiter
-            except Exception:
-                delimiter = ','  # fallback padrão
-
-            df = pd.read_csv(io.StringIO(content), delimiter=delimiter)
+                df = pd.read_csv(io.BytesIO(file_bytes), encoding="latin1")
             df.columns = df.columns.str.strip()
-
         elif file.filename.endswith(".xlsx"):
             df = pd.read_excel(io.BytesIO(file_bytes))
             df.columns = df.columns.str.strip()
-
         else:
             return JSONResponse(content={"erro": "Formato de arquivo inválido."}, status_code=400)
 
@@ -214,18 +202,21 @@ async def analisar(
         if not colunas_usadas:
             return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
 
+        for col in colunas_usadas:
+            if col not in df.columns:
+                return JSONResponse(content={"erro": f"Coluna '{col}' não encontrada no arquivo."}, status_code=400)
+
         resultado_texto = None
         imagem_base64 = None
 
         if ferramenta and ferramenta.strip():
             funcao = ANALISES.get(ferramenta.strip())
-
             if not funcao:
                 return JSONResponse(content={"erro": "Análise estatística desconhecida."}, status_code=400)
             resultado_texto, imagem_base64 = funcao(df, colunas_usadas)
 
-        elif grafico:
-            funcao = GRAFICOS.get(grafico)
+        elif grafico and grafico.strip():
+            funcao = GRAFICOS.get(grafico.strip())
             if not funcao:
                 return JSONResponse(content={"erro": "Gráfico desconhecido."}, status_code=400)
             imagem_base64 = funcao(df, colunas_usadas)
