@@ -166,13 +166,13 @@ async def analisar(
         colunas_usadas = []
 
         if coluna_y:
-            colunas_usadas.append(letra_para_nome(df, coluna_y.strip()))
+        colunas_usadas.append(interpretar_coluna(df, coluna_y))
 
         if colunas_x:
-            for c in colunas_x.split(","):
-                c = c.strip()
-                if c:
-                    colunas_usadas.append(letra_para_nome(df, c))
+        for c in colunas_x.split(","):
+        if c.strip():
+            colunas_usadas.append(interpretar_coluna(df, c))
+
 
         if not colunas_usadas:
             return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
