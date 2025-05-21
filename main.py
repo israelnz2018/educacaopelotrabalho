@@ -144,45 +144,50 @@ async def analisar(
     colunas_x: str = Form(None)
 ):
     try:
-        def letra_para_nome(df, letra):
-            try:
-                idx = ord(letra.upper()) - ord("A")
+    def interpretar_coluna(df, valor):
+        valor = valor.strip()
+        if len(valor) == 1 and valor.upper() in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+            idx = ord(valor.upper()) - ord("A")
+            if idx < len(df.columns):
                 return df.columns[idx]
-            except:
-                return letra  # retorna o nome original se não for uma letra
+            else:
+                raise ValueError(f"Coluna na posição '{valor}' não existe no arquivo.")
+        return valor
 
-        file_bytes = await file.read()
+    file_bytes = await file.read()
 
-        if file.filename.endswith(".csv"):
-            try:
-                df = pd.read_csv(io.BytesIO(file_bytes), encoding="utf-8")
-            except UnicodeDecodeError:
-                df = pd.read_csv(io.BytesIO(file_bytes), encoding="latin1")
-        elif file.filename.endswith(".xlsx"):
-            df = pd.read_excel(io.BytesIO(file_bytes))
-        else:
-            return JSONResponse(content={"erro": "Formato de arquivo inválido."}, status_code=400)
+    if file.filename.endswith(".csv"):
+        try:
+            df = pd.read_csv(io.BytesIO(file_bytes), encoding="utf-8")
+        except UnicodeDecodeError:
+            df = pd.read_csv(io.BytesIO(file_bytes), encoding="latin1")
+        df.columns = df.columns.str.strip()  # limpa espaços do cabeçalho
+    elif file.filename.endswith(".xlsx"):
+        df = pd.read_excel(io.BytesIO(file_bytes))
+        df.columns = df.columns.str.strip()
+    else:
+        return JSONResponse(content={"erro": "Formato de arquivo inválido."}, status_code=400)
 
-        colunas_usadas = []
+    colunas_usadas = []
 
-        if coluna_y:
-            colunas_usadas.append(interpretar_coluna(df, coluna_y))
+    if coluna_y:
+        colunas_usadas.append(interpretar_coluna(df, coluna_y))
 
-        if colunas_x:
-            for c in colunas_x.split(","):
-        if c.strip():
-            colunas_usadas.append(interpretar_coluna(df, c))
+    if colunas_x:
+        for c in colunas_x.split(","):
+            if c.strip():
+                colunas_usadas.append(interpretar_coluna(df, c))
 
-        if not colunas_usadas:
-            return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
+    if not colunas_usadas:
+        return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
 
-        # Valida se todas as colunas existem no DataFrame
-        for col in colunas_usadas:
-            if col not in df.columns:
-                return JSONResponse(content={"erro": f"Coluna '{col}' não encontrada no arquivo."}, status_code=400)
+    # Valida se todas as colunas existem no DataFrame
+    for col in colunas_usadas:
+        if col not in df.columns:
+            return JSONResponse(content={"erro": f"Coluna '{col}' não encontrada no arquivo."}, status_code=400)
 
-        resultado_texto = None
-        imagem_base64 = None
+    resultado_texto = None
+    imagem_base64 = None
 
         if ferramenta_estatistica:
             funcao = ANALISES.get(ferramenta_estatistica)
