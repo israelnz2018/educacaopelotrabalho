@@ -148,7 +148,7 @@ async def analisar(
                 if idx < len(df.columns):
                     return df.columns[idx]
                 else:
-                    raise ValueError(f"Coluna na posição '{valor}' não existe no arquivo.")
+                    raise ValueError(f"Coluna na posição '{valor}' não existe no arquivo. Arquivo tem apenas {len(df.columns)} colunas.")
             return valor
 
         file_bytes = await file.read()
@@ -178,10 +178,6 @@ async def analisar(
         if not colunas_usadas:
             return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
 
-        for col in colunas_usadas:
-            if col not in df.columns:
-                return JSONResponse(content={"erro": f"Coluna '{col}' não encontrada no arquivo."}, status_code=400)
-
         resultado_texto = None
         imagem_base64 = None
 
@@ -206,11 +202,17 @@ async def analisar(
             "colunas_utilizadas": colunas_usadas
         }
 
+    except ValueError as e:
+        return JSONResponse(
+            content={"erro": str(e)},
+            status_code=400
+        )
     except Exception as e:
         return JSONResponse(
             content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)},
             status_code=500
         )
+
 
 
 
