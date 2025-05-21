@@ -141,6 +141,8 @@ async def analisar(
     colunas_x: str = Form(None)
 ):
     try:
+        import csv  # garantir que está no topo do seu script
+
         def interpretar_coluna(df, valor):
             valor = valor.strip()
             if len(valor) == 1 and valor.upper() in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
@@ -155,13 +157,23 @@ async def analisar(
 
         if file.filename.endswith(".csv"):
             try:
-                df = pd.read_csv(io.BytesIO(file_bytes), encoding="utf-8")
+                content = file_bytes.decode("utf-8")
             except UnicodeDecodeError:
-                df = pd.read_csv(io.BytesIO(file_bytes), encoding="latin1")
+                content = file_bytes.decode("latin1")
+
+            try:
+                dialect = csv.Sniffer().sniff(content.splitlines()[0])
+                delimiter = dialect.delimiter
+            except Exception:
+                delimiter = ','  # fallback padrão
+
+            df = pd.read_csv(io.StringIO(content), delimiter=delimiter)
             df.columns = df.columns.str.strip()
+
         elif file.filename.endswith(".xlsx"):
             df = pd.read_excel(io.BytesIO(file_bytes))
             df.columns = df.columns.str.strip()
+
         else:
             return JSONResponse(content={"erro": "Formato de arquivo inválido."}, status_code=400)
 
@@ -212,9 +224,3 @@ async def analisar(
             content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)},
             status_code=500
         )
-
-
-
-
-
-
