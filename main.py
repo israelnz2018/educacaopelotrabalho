@@ -144,6 +144,13 @@ async def analisar(
     colunas_x: str = Form(None)
 ):
     try:
+        def letra_para_nome(df, letra):
+            try:
+                idx = ord(letra.upper()) - ord("A")
+                return df.columns[idx]
+            except:
+                return letra  # retorna o nome original se não for uma letra
+
         file_bytes = await file.read()
 
         if file.filename.endswith(".csv"):
@@ -159,10 +166,13 @@ async def analisar(
         colunas_usadas = []
 
         if coluna_y:
-            colunas_usadas.append(coluna_y.strip())
+            colunas_usadas.append(letra_para_nome(df, coluna_y.strip()))
 
         if colunas_x:
-            colunas_usadas += [c.strip() for c in colunas_x.split(",") if c.strip()]
+            for c in colunas_x.split(","):
+                c = c.strip()
+                if c:
+                    colunas_usadas.append(letra_para_nome(df, c))
 
         if not colunas_usadas:
             return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
@@ -201,6 +211,7 @@ async def analisar(
             content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)},
             status_code=500
         )
+
 
 
 
