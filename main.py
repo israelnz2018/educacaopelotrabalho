@@ -14,11 +14,21 @@ app = FastAPI()
 
 # 📊 Funções de análise estatística
 def analise_regressao_linear_simples(df, colunas):
-    X = df[colunas[0]]
-    Y = df[colunas[1]]
+    X = pd.to_numeric(df[colunas[0]], errors="coerce")
+    Y = pd.to_numeric(df[colunas[1]], errors="coerce")
+
+    # Remove valores inválidos
+    validos = ~(X.isna() | Y.isna())
+    X = X[validos]
+    Y = Y[validos]
+
+    if len(X) < 2 or len(Y) < 2:
+        raise ValueError("Não há dados numéricos suficientes para a regressão.")
+
     X_const = sm.add_constant(X)
     modelo = sm.OLS(Y, X_const).fit()
     resumo = modelo.summary().as_text()
+
     plt.figure(figsize=(8, 6))
     sns.regplot(x=X, y=Y, ci=None, line_kws={"color": "red"})
     plt.xlabel(colunas[0])
