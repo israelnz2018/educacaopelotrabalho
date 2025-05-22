@@ -160,6 +160,13 @@ async def analisar(
             file_bytes = await arquivo.read()
             print("📥 Arquivo recebido — tamanho:", len(file_bytes))
             print("📥 Início do conteúdo:", file_bytes[:20])
+
+            # 🔍 Salva o arquivo recebido para depuração
+            caminho_salvo = "debug_received_file.xlsx"
+            with open(caminho_salvo, "wb") as f:
+                f.write(file_bytes)
+            print(f"📥 Arquivo salvo para depuração em: {caminho_salvo}")
+
             df = pd.read_excel(io.BytesIO(file_bytes), engine="openpyxl")
         else:
             return JSONResponse(content={"erro": "Envie um arquivo Excel (.xlsx) válido."}, status_code=400)
@@ -206,4 +213,5 @@ async def analisar(
         return JSONResponse(content={"erro": str(e)}, status_code=400)
     except Exception as e:
         return JSONResponse(content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)}, status_code=500)
+
 
