@@ -140,7 +140,6 @@ GRAFICOS = {
 @app.post("/analise")
 async def analisar(
     arquivo: UploadFile = File(None),
-    sheet_url: str = Form(None),
     ferramenta: str = Form(None),
     grafico: str = Form(None),
     coluna_y: str = Form(None),
@@ -157,19 +156,13 @@ async def analisar(
                     raise ValueError(f"Coluna na posição '{valor}' não existe no arquivo. Arquivo tem apenas {len(df.columns)} colunas.")
             return valor
 
-        if sheet_url:
-            if "docs.google.com" in sheet_url:
-                sheet_url = sheet_url.replace("/edit#gid=", "/export?format=csv&gid=")
-            df = pd.read_csv(sheet_url)
-
-        elif arquivo and arquivo.filename.endswith(".xlsx"):
+        if arquivo and arquivo.filename.endswith(".xlsx"):
             file_bytes = await arquivo.read()
             print("📥 Arquivo recebido — tamanho:", len(file_bytes))
             print("📥 Início do conteúdo:", file_bytes[:20])
             df = pd.read_excel(io.BytesIO(file_bytes), engine="openpyxl")
-
         else:
-            return JSONResponse(content={"erro": "Envie um arquivo Excel ou link válido do Google Sheets."}, status_code=400)
+            return JSONResponse(content={"erro": "Envie um arquivo Excel (.xlsx) válido."}, status_code=400)
 
         df.columns = df.columns.str.strip()
         colunas_usadas = []
