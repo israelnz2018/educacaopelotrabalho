@@ -139,7 +139,7 @@ GRAFICOS = {
 
 @app.post("/analise")
 async def analisar(
-    file: UploadFile = File(None),
+    arquivo: UploadFile = File(None),
     sheet_url: str = Form(None),
     ferramenta: str = Form(None),
     grafico: str = Form(None),
@@ -161,9 +161,9 @@ async def analisar(
             if "docs.google.com" in sheet_url:
                 sheet_url = sheet_url.replace("/edit#gid=", "/export?format=csv&gid=")
             df = pd.read_csv(sheet_url)
-            
-        elif file and file.filename.endswith(".xlsx"):
-            file_bytes = await file.read()
+
+        elif arquivo and arquivo.filename.endswith(".xlsx"):
+            file_bytes = await arquivo.read()
             print("📥 Arquivo recebido — tamanho:", len(file_bytes))
             print("📥 Início do conteúdo:", file_bytes[:20])
             df = pd.read_excel(io.BytesIO(file_bytes), engine="openpyxl")
