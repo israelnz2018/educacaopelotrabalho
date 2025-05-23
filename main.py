@@ -152,10 +152,13 @@ async def analisar(
 
         if coluna_y:
             colunas_usadas.append(interpretar_coluna(df, coluna_y))
+                print("🧪 Valor bruto de colunas_x:", colunas_x)
+
         if colunas_x:
-            for c in colunas_x.split(","):
-                if c.strip():
-                    colunas_usadas.append(interpretar_coluna(df, c))
+            colunas_x_lista = [x.strip() for x in colunas_x.split(",") if x.strip()]
+            print("🧪 Lista extraída de colunas_x:", colunas_x_lista)
+            for c in colunas_x_lista:
+                colunas_usadas.append(interpretar_coluna(df, c))
 
         # 🔎 Depuração para verificar colunas finais
         print("🧪 Colunas recebidas do formulário (interpretação final):", colunas_usadas)
