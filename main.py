@@ -130,7 +130,7 @@ async def analisar(
     coluna_y: str = Form(None),
     colunas_x: str = Form(None)
 ):
-        try:
+    try:
         def interpretar_coluna(df, valor):
             valor = valor.strip()
             if len(valor) == 1 and valor.upper() in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
@@ -194,4 +194,3 @@ async def analisar(
         return JSONResponse(content={"erro": str(e)}, status_code=400)
     except Exception as e:
         return JSONResponse(content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)}, status_code=500)
-
