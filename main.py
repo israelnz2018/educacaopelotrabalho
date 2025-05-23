@@ -95,6 +95,8 @@ def analise_regressao_logistica_binaria(df, colunas):
     return resumo, salvar_grafico()
 
 def grafico_dispersao(df, colunas):
+    if len(colunas) < 2:
+        raise ValueError("Gráfico de dispersão requer exatamente duas colunas.")
     plt.figure(figsize=(8, 6))
     sns.scatterplot(x=df[colunas[0]], y=df[colunas[1]])
     plt.title("Gráfico de Dispersão")
