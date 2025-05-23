@@ -94,26 +94,10 @@ def analise_regressao_logistica_binaria(df, colunas):
     plt.legend()
     return resumo, salvar_grafico()
 
-def grafico_pareto(df, colunas):
+def grafico_dispersao(df, colunas):
     plt.figure(figsize=(8, 6))
-    counts = df[colunas[0]].value_counts().sort_values(ascending=False)
-    cum_perc = counts.cumsum() / counts.sum() * 100
-    ax = counts.plot(kind='bar')
-    ax2 = ax.twinx()
-    ax2.plot(cum_perc.values, color='red', marker='o', linestyle='-')
-    ax2.axhline(80, color='gray', linestyle='dashed')
-    ax.set_ylabel("Frequência")
-    ax2.set_ylabel("Percentual acumulado (%)")
-    plt.title("Gráfico de Pareto")
-    return salvar_grafico()
-
-def grafico_serie_temporal(df, colunas):
-    plt.figure(figsize=(10, 6))
-    for col in colunas[1:]:
-        plt.plot(df[colunas[0]], df[col], label=col)
-    plt.xlabel(colunas[0])
-    plt.title("Série Temporal")
-    plt.legend()
+    sns.scatterplot(x=df[colunas[0]], y=df[colunas[1]])
+    plt.title("Gráfico de Dispersão")
     return salvar_grafico()
 
 def salvar_grafico():
@@ -133,12 +117,7 @@ ANALISES = {
 }
 
 GRAFICOS = {
-    "boxplot": grafico_boxplot,
-    "histograma": grafico_histograma,
-    "dispersao": grafico_dispersao,
-    "pizza": grafico_pizza,
-    "pareto": grafico_pareto,
-    "serie_temporal": grafico_serie_temporal
+    "dispersao": grafico_dispersao
 }
 
 @app.post("/analise")
@@ -162,15 +141,6 @@ async def analisar(
 
         if arquivo and arquivo.filename.endswith(".xlsx"):
             file_bytes = await arquivo.read()
-            print("📥 Arquivo recebido — tamanho:", len(file_bytes))
-            print("📥 Início do conteúdo:", file_bytes[:20])
-
-            # 🔍 Salva o arquivo recebido para depuração
-            caminho_salvo = "debug_received_file.xlsx"
-            with open(caminho_salvo, "wb") as f:
-                f.write(file_bytes)
-            print(f"📥 Arquivo salvo para depuração em: {caminho_salvo}")
-
             df = pd.read_excel(io.BytesIO(file_bytes), engine="openpyxl")
         else:
             return JSONResponse(content={"erro": "Envie um arquivo Excel (.xlsx) válido."}, status_code=400)
