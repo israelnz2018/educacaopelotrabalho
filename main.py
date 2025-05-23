@@ -152,7 +152,8 @@ async def analisar(
 
         if coluna_y:
             colunas_usadas.append(interpretar_coluna(df, coluna_y))
-                print("🧪 Valor bruto de colunas_x:", colunas_x)
+
+        print("🧪 Valor bruto de colunas_x:", colunas_x)
 
         if colunas_x:
             colunas_x_lista = [x.strip() for x in colunas_x.split(",") if x.strip()]
