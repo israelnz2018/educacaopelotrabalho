@@ -130,7 +130,7 @@ async def analisar(
     coluna_y: str = Form(None),
     colunas_x: str = Form(None)
 ):
-    try:
+        try:
         def interpretar_coluna(df, valor):
             valor = valor.strip()
             if len(valor) == 1 and valor.upper() in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
@@ -149,12 +149,17 @@ async def analisar(
 
         df.columns = df.columns.str.strip()
         colunas_usadas = []
+
         if coluna_y:
             colunas_usadas.append(interpretar_coluna(df, coluna_y))
         if colunas_x:
             for c in colunas_x.split(","):
                 if c.strip():
                     colunas_usadas.append(interpretar_coluna(df, c))
+
+        # 🔎 Depuração para verificar colunas finais
+        print("🧪 Colunas recebidas do formulário (interpretação final):", colunas_usadas)
+        print("🧪 Colunas reais no DataFrame:", list(df.columns))
 
         if not colunas_usadas:
             return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
@@ -189,3 +194,4 @@ async def analisar(
         return JSONResponse(content={"erro": str(e)}, status_code=400)
     except Exception as e:
         return JSONResponse(content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)}, status_code=500)
+
