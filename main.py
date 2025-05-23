@@ -13,59 +13,13 @@ from textwrap import dedent
 
 app = FastAPI()
 
-# Funções de formatação
-
-def formatar_regressao_simples(col_x, col_y, p_valor):
-    return dedent(f"""
-    1. Nome do teste estatístico aplicado:
-    Regressão Linear Simples
-
-    2. Premissas:
-    Os resíduos da regressão são normalmente distribuídos, independentes e têm variância constante (homocedasticidade).
-
-    3. Resultado do teste:
-    Valor-p da variável {col_x}: {p_valor:.3f}
-
-    4. Conclusão:
-    {"Houve" if p_valor < 0.05 else "Não houve"} uma diferença significativa, com 95% de confiança, indicando que a variável {col_x} {"tem" if p_valor < 0.05 else "não tem"} um impacto significativo sobre {col_y}.
-    """).strip()
-
-def formatar_regressao_multipla(modelo, col_y):
-    r2 = modelo.rsquared_adj
-    p_valor = modelo.f_pvalue
-    return dedent(f"""
-    1. Nome do teste estatístico aplicado:
-    Regressão Linear Múltipla
-
-    2. Premissas:
-    Linearidade, independência dos erros, homocedasticidade e normalidade dos resíduos.
-
-    3. Resultado do teste:
-    R² ajustado = {r2:.3f}
-    Valor-p global do modelo = {p_valor:.3f}
-
-    4. Conclusão:
-    {"O modelo explica" if p_valor < 0.05 else "O modelo não explica"} significativamente a variável {col_y} com 95% de confiança.
-    """).strip()
-
-def formatar_regressao_logistica(modelo, auc_valor):
-    p_valor = modelo.llr_pvalue
-    return dedent(f"""
-    1. Nome do teste estatístico aplicado:
-    Regressão Logística Binária
-
-    2. Premissas:
-    Observações independentes, ausência de multicolinearidade, e relação linear entre preditores contínuos e o logit da variável dependente.
-
-    3. Resultado do teste:
-    AUC da curva ROC = {auc_valor:.2f}
-    Valor-p global do modelo = {p_valor:.3f}
-
-    4. Conclusão:
-    {"O modelo é estatisticamente significativo" if p_valor < 0.05 else "O modelo não é estatisticamente significativo"}, com 95% de confiança.
-    """).strip()
-
-# Análises estatísticas
+def formatar_analise(nome_teste, premissas, resultado, conclusao):
+    return f"""
+<b>1. Nome do teste estatístico aplicado:</b><br>{nome_teste}<br><br>
+<b>2. Premissas:</b><br>{premissas}<br><br>
+<b>3. Resultado do teste:</b><br>{resultado}<br><br>
+<b>4. Conclusão:</b><br>{conclusao}
+""".strip()
 
 def analise_regressao_linear_simples(df, colunas):
     X = df[colunas[0]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
@@ -80,7 +34,14 @@ def analise_regressao_linear_simples(df, colunas):
     X_const = sm.add_constant(X)
     modelo = sm.OLS(Y, X_const).fit()
     p_valor = modelo.pvalues[1]
-    resumo = formatar_regressao_simples(colunas[0], colunas[1], p_valor)
+
+    nome_teste = "Regressão Linear Simples"
+    premissas = "Os resíduos da regressão são normalmente distribuídos, independentes e têm variância constante (homocedasticidade)."
+    resultado = f"Valor-p da variável {colunas[0]}: {p_valor:.3f}"
+    conclusao = f"{'Houve' if p_valor < 0.05 else 'Não houve'} uma diferença significativa, com 95% de confiança, indicando que a variável {colunas[0]} {'tem' if p_valor < 0.05 else 'não tem'} um impacto significativo sobre {colunas[1]}."
+
+    resumo = formatar_analise(nome_teste, premissas, resultado, conclusao)
+
     plt.figure(figsize=(8, 6))
     sns.regplot(x=X, y=Y, ci=None, line_kws={"color": "red"})
     plt.xlabel(colunas[0])
@@ -93,7 +54,15 @@ def analise_regressao_linear_multipla(df, colunas):
     Y = df[colunas[-1]]
     X_const = sm.add_constant(X)
     modelo = sm.OLS(Y, X_const).fit()
-    resumo = formatar_regressao_multipla(modelo, colunas[-1])
+    r2 = modelo.rsquared_adj
+    p_valor = modelo.f_pvalue
+
+    nome_teste = "Regressão Linear Múltipla"
+    premissas = "Linearidade, independência dos erros, homocedasticidade e normalidade dos resíduos."
+    resultado = f"R² ajustado = {r2:.3f}, Valor-p global do modelo = {p_valor:.3f}"
+    conclusao = f"{'O modelo explica' if p_valor < 0.05 else 'O modelo não explica'} significativamente a variável {colunas[-1]} com 95% de confiança."
+
+    resumo = formatar_analise(nome_teste, premissas, resultado, conclusao)
     return resumo, None
 
 def analise_regressao_logistica_binaria(df, colunas):
@@ -104,7 +73,15 @@ def analise_regressao_logistica_binaria(df, colunas):
     y_prob = modelo.predict(X_const)
     fpr, tpr, _ = roc_curve(y, y_prob)
     roc_auc = auc(fpr, tpr)
-    resumo = formatar_regressao_logistica(modelo, roc_auc)
+    p_valor = modelo.llr_pvalue
+
+    nome_teste = "Regressão Logística Binária"
+    premissas = "Observações independentes, ausência de multicolinearidade, e relação linear entre preditores contínuos e o logit da variável dependente."
+    resultado = f"AUC da curva ROC = {roc_auc:.2f}, Valor-p global do modelo = {p_valor:.3f}"
+    conclusao = f"{'O modelo é estatisticamente significativo' if p_valor < 0.05 else 'O modelo não é estatisticamente significativo'}, com 95% de confiança."
+
+    resumo = formatar_analise(nome_teste, premissas, resultado, conclusao)
+
     plt.figure(figsize=(8, 6))
     plt.plot(fpr, tpr, label=f'ROC curve (area = {roc_auc:.2f})')
     plt.plot([0, 1], [0, 1], 'k--')
@@ -113,16 +90,6 @@ def analise_regressao_logistica_binaria(df, colunas):
     plt.title('Curva ROC - Regressão Logística')
     plt.legend()
     return resumo, salvar_grafico()
-
-# Gráficos
-def grafico_boxplot(df, colunas):
-    plt.figure(figsize=(8, 6))
-    if len(colunas) == 1:
-        sns.boxplot(y=df[colunas[0]])
-    elif len(colunas) == 2:
-        sns.boxplot(x=df[colunas[1]], y=df[colunas[0]])
-    plt.title("Boxplot")
-    return salvar_grafico()
 
 def grafico_histograma(df, colunas):
     plt.figure(figsize=(8, 6))
