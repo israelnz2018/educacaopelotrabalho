@@ -128,7 +128,7 @@ async def analisar(
     ferramenta: str = Form(None),
     grafico: str = Form(None),
     coluna_y: str = Form(None),
-    colunas_x: str = Form(None)
+    colunas_x: str | list[str] = Form(None)
 ):
     try:
         def interpretar_coluna(df, valor):
@@ -150,18 +150,24 @@ async def analisar(
         df.columns = df.columns.str.strip()
         colunas_usadas = []
 
+        # Y
         if coluna_y:
             colunas_usadas.append(interpretar_coluna(df, coluna_y))
 
+        # X — aceita string ou lista
         print("🧪 Valor bruto de colunas_x:", colunas_x)
-
-        if colunas_x:
+        if isinstance(colunas_x, str):
             colunas_x_lista = [x.strip() for x in colunas_x.split(",") if x.strip()]
-            print("🧪 Lista extraída de colunas_x:", colunas_x_lista)
-            for c in colunas_x_lista:
-                colunas_usadas.append(interpretar_coluna(df, c))
+        elif isinstance(colunas_x, list):
+            colunas_x_lista = [x.strip() for x in colunas_x if isinstance(x, str) and x.strip()]
+        else:
+            colunas_x_lista = []
 
-        # 🔎 Depuração para verificar colunas finais
+        print("🧪 Lista extraída de colunas_x:", colunas_x_lista)
+        for c in colunas_x_lista:
+            colunas_usadas.append(interpretar_coluna(df, c))
+
+        # 🔎 Logs
         print("🧪 Colunas recebidas do formulário (interpretação final):", colunas_usadas)
         print("🧪 Colunas reais no DataFrame:", list(df.columns))
 
@@ -180,11 +186,13 @@ async def analisar(
             if not funcao:
                 return JSONResponse(content={"erro": "Análise estatística desconhecida."}, status_code=400)
             resultado_texto, imagem_base64 = funcao(df, colunas_usadas)
+
         elif grafico and grafico.strip():
             funcao = GRAFICOS.get(grafico.strip())
             if not funcao:
                 return JSONResponse(content={"erro": "Gráfico desconhecido."}, status_code=400)
             imagem_base64 = funcao(df, colunas_usadas)
+
         else:
             return JSONResponse(content={"erro": "Nenhuma ferramenta selecionada."}, status_code=400)
 
