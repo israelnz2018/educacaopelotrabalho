@@ -117,7 +117,7 @@ ANALISES = {
 }
 
 GRAFICOS = {
-    "dispersao": grafico_dispersao
+    "scatter": grafico_dispersao
 }
 
 @app.post("/analise")
