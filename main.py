@@ -9,10 +9,64 @@ import os
 import statsmodels.api as sm
 from sklearn.metrics import roc_curve, auc
 import numpy as np
+from textwrap import dedent
 
 app = FastAPI()
 
-# Funções de análise estatística
+# Funções de formatação
+
+def formatar_regressao_simples(col_x, col_y, p_valor):
+    return dedent(f"""
+    1. Nome do teste estatístico aplicado:
+    Regressão Linear Simples
+
+    2. Premissas:
+    Os resíduos da regressão são normalmente distribuídos, independentes e têm variância constante (homocedasticidade).
+
+    3. Resultado do teste:
+    Valor-p da variável {col_x}: {p_valor:.3f}
+
+    4. Conclusão:
+    {"Houve" if p_valor < 0.05 else "Não houve"} uma diferença significativa, com 95% de confiança, indicando que a variável {col_x} {"tem" if p_valor < 0.05 else "não tem"} um impacto significativo sobre {col_y}.
+    """).strip()
+
+def formatar_regressao_multipla(modelo, col_y):
+    r2 = modelo.rsquared_adj
+    p_valor = modelo.f_pvalue
+    return dedent(f"""
+    1. Nome do teste estatístico aplicado:
+    Regressão Linear Múltipla
+
+    2. Premissas:
+    Linearidade, independência dos erros, homocedasticidade e normalidade dos resíduos.
+
+    3. Resultado do teste:
+    R² ajustado = {r2:.3f}
+    Valor-p global do modelo = {p_valor:.3f}
+
+    4. Conclusão:
+    {"O modelo explica" if p_valor < 0.05 else "O modelo não explica"} significativamente a variável {col_y} com 95% de confiança.
+    """).strip()
+
+def formatar_regressao_logistica(modelo, auc_valor):
+    p_valor = modelo.llr_pvalue
+    return dedent(f"""
+    1. Nome do teste estatístico aplicado:
+    Regressão Logística Binária
+
+    2. Premissas:
+    Observações independentes, ausência de multicolinearidade, e relação linear entre preditores contínuos e o logit da variável dependente.
+
+    3. Resultado do teste:
+    AUC da curva ROC = {auc_valor:.2f}
+    Valor-p global do modelo = {p_valor:.3f}
+
+    4. Conclusão:
+    {"O modelo é estatisticamente significativo" if p_valor < 0.05 else "O modelo não é estatisticamente significativo"}, com 95% de confiança.
+    """).strip()
+
+# Análises estatísticas
+
 def analise_regressao_linear_simples(df, colunas):
     X = df[colunas[0]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
     Y = df[colunas[1]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
@@ -25,7 +79,8 @@ def analise_regressao_linear_simples(df, colunas):
         raise ValueError("Não há dados numéricos suficientes para a regressão.")
     X_const = sm.add_constant(X)
     modelo = sm.OLS(Y, X_const).fit()
-    resumo = modelo.summary().as_text()
+    p_valor = modelo.pvalues[1]
+    resumo = formatar_regressao_simples(colunas[0], colunas[1], p_valor)
     plt.figure(figsize=(8, 6))
     sns.regplot(x=X, y=Y, ci=None, line_kws={"color": "red"})
     plt.xlabel(colunas[0])
@@ -38,7 +93,7 @@ def analise_regressao_linear_multipla(df, colunas):
     Y = df[colunas[-1]]
     X_const = sm.add_constant(X)
     modelo = sm.OLS(Y, X_const).fit()
-    resumo = modelo.summary().as_text()
+    resumo = formatar_regressao_multipla(modelo, colunas[-1])
     return resumo, None
 
 def analise_regressao_logistica_binaria(df, colunas):
@@ -46,10 +101,10 @@ def analise_regressao_logistica_binaria(df, colunas):
     y = df[colunas[-1]]
     X_const = sm.add_constant(X)
     modelo = sm.Logit(y, X_const).fit(disp=False)
-    resumo = modelo.summary().as_text()
     y_prob = modelo.predict(X_const)
     fpr, tpr, _ = roc_curve(y, y_prob)
     roc_auc = auc(fpr, tpr)
+    resumo = formatar_regressao_logistica(modelo, roc_auc)
     plt.figure(figsize=(8, 6))
     plt.plot(fpr, tpr, label=f'ROC curve (area = {roc_auc:.2f})')
     plt.plot([0, 1], [0, 1], 'k--')
