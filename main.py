@@ -9,24 +9,20 @@ import os
 import statsmodels.api as sm
 from sklearn.metrics import roc_curve, auc
 import numpy as np
-from textwrap import dedent
 
 app = FastAPI()
 
 def formatar_analise(nome_teste, premissas, resultado, conclusao):
-    return f"""
-**1. Nome do teste estatístico aplicado:**
-{nome_teste}
-
-**2. Premissas:**
-{premissas}
-
-**3. Resultado do teste:**
-{resultado}
-
-**4. Conclusão:**
-{conclusao}
-""".strip()
+    return (
+        "1. Nome do teste estatístico aplicado:\n"
+        f"{nome_teste}\n\n"
+        "2. Premissas:\n"
+        f"{premissas}\n\n"
+        "3. Resultado do teste:\n"
+        f"{resultado}\n\n"
+        "4. Conclusão:\n"
+        f"{conclusao}"
+    )
 
 def analise_regressao_linear_simples(df, colunas):
     X = df[colunas[0]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
@@ -97,7 +93,6 @@ def analise_regressao_logistica_binaria(df, colunas):
     plt.title('Curva ROC - Regressão Logística')
     plt.legend()
     return resumo, salvar_grafico()
-
 
 def grafico_pareto(df, colunas):
     plt.figure(figsize=(8, 6))
