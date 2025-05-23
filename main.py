@@ -15,10 +15,17 @@ app = FastAPI()
 
 def formatar_analise(nome_teste, premissas, resultado, conclusao):
     return f"""
-<b>1. Nome do teste estatístico aplicado:</b><br>{nome_teste}<br><br>
-<b>2. Premissas:</b><br>{premissas}<br><br>
-<b>3. Resultado do teste:</b><br>{resultado}<br><br>
-<b>4. Conclusão:</b><br>{conclusao}
+**1. Nome do teste estatístico aplicado:**
+{nome_teste}
+
+**2. Premissas:**
+{premissas}
+
+**3. Resultado do teste:**
+{resultado}
+
+**4. Conclusão:**
+{conclusao}
 """.strip()
 
 def analise_regressao_linear_simples(df, colunas):
@@ -91,26 +98,6 @@ def analise_regressao_logistica_binaria(df, colunas):
     plt.legend()
     return resumo, salvar_grafico()
 
-def grafico_histograma(df, colunas):
-    plt.figure(figsize=(8, 6))
-    for col in colunas:
-        sns.histplot(df[col], kde=True, label=col)
-    plt.legend()
-    plt.title("Histograma")
-    return salvar_grafico()
-
-def grafico_dispersao(df, colunas):
-    plt.figure(figsize=(8, 6))
-    sns.scatterplot(x=df[colunas[0]], y=df[colunas[1]])
-    plt.title("Gráfico de Dispersão")
-    return salvar_grafico()
-
-def grafico_pizza(df, colunas):
-    plt.figure(figsize=(8, 6))
-    counts = df[colunas[0]].value_counts()
-    plt.pie(counts.values, labels=counts.index, autopct='%1.1f%%')
-    plt.title("Gráfico de Pizza")
-    return salvar_grafico()
 
 def grafico_pareto(df, colunas):
     plt.figure(figsize=(8, 6))
