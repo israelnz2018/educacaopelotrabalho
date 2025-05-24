@@ -14,6 +14,7 @@ app = FastAPI()
 
 # 🔍 Regressão Linear Simples
 def analise_regressao_linear_simples(df, colunas):
+    # 🔢 Conversão dos dados
     X = df[colunas[0]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
     Y = df[colunas[1]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
     X = pd.to_numeric(X, errors="coerce")
@@ -21,17 +22,37 @@ def analise_regressao_linear_simples(df, colunas):
     validos = ~(X.isna() | Y.isna())
     X = X[validos]
     Y = Y[validos]
+
     if len(X) < 2 or len(Y) < 2:
         raise ValueError("Não há dados numéricos suficientes para a regressão.")
+
+    # 📊 Modelo de regressão
     X_const = sm.add_constant(X)
     modelo = sm.OLS(Y, X_const).fit()
+
+    a = modelo.params[0]  # Intercepto
+    b = modelo.params[1]  # Inclinação
     p_valor = modelo.pvalues[1]
-    resumo = f"Valor-p da variável {colunas[0]}: {p_valor:.3f}"
+    r2 = modelo.rsquared
+    r2_ajustado = modelo.rsquared_adj
+    erro_padrao = np.sqrt(modelo.mse_resid)
+
+    # 🧾 Montar resultado formatado
+    resumo = f"""
+**Equação da reta:**  y = {a:.3f} + {b:.3f}·x  
+**Valor-p da inclinação:**  {p_valor:.4f}  
+**Coeficiente de determinação (R²):**  {r2:.4f}  
+**R² ajustado:**  {r2_ajustado:.4f}  
+**Erro padrão da estimativa:**  {erro_padrao:.4f}
+""".strip()
+
+    # 📈 Gerar gráfico
     plt.figure(figsize=(8, 6))
     sns.regplot(x=X, y=Y, ci=None, line_kws={"color": "red"})
     plt.xlabel(colunas[0])
     plt.ylabel(colunas[1])
     plt.title("Regressão Linear Simples")
+
     return resumo, salvar_grafico()
 
 # 🔍 Regressão Linear Múltipla
