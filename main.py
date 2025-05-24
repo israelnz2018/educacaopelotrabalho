@@ -91,53 +91,22 @@ def grafico_dispersao(df, colunas):
     plt.title("Gráfico de Dispersão")
     return salvar_grafico()
 
-# 📊 Gráfico Boxplot estilo Minitab
-def grafico_boxplot(df, colunas, coluna_y=None):
-    plt.figure(figsize=(10, 6))
-    sns.set(style="whitegrid")
-
-    if coluna_y:
-        col_y = coluna_y.strip()
-        if col_y not in df.columns:
-            raise ValueError(f"Coluna Y '{col_y}' não encontrada.")
-
-        if colunas:
-            grupo = df[colunas].astype(str).agg("-".join, axis=1)
-            data = pd.DataFrame({col_y: df[col_y], "Grupo": grupo})
-            ax = sns.boxplot(x="Grupo", y=col_y, data=data, color="#87CEFA", linewidth=1.5)
-
-            medias = data.groupby("Grupo")[col_y].mean()
-            for i, (grupo, media) in enumerate(medias.items()):
-                plt.scatter(i, media, color="blue", marker="D", s=50, label="Média" if i == 0 else "")
-            ax.set_xlabel("Grupo")
-        else:
-            ax = sns.boxplot(y=df[col_y], color="#87CEFA", linewidth=1.5)
-            media = df[col_y].mean()
-            plt.scatter(0, media, color="blue", marker="D", s=50, label="Média")
-            ax.set_xlabel("")
-
-        ax.set_ylabel(col_y)
-        ax.set_title(f"Boxplot de {col_y}", fontsize=14, weight="bold")
-
-    else:
-        if len(colunas) < 2:
-            raise ValueError("Para comparação entre variáveis, selecione ao menos duas colunas.")
-        df_sel = df[colunas].copy()
-        for col in colunas:
-            df_sel[col] = pd.to_numeric(df_sel[col], errors="coerce")
-
-        df_long = df_sel.melt(var_name="Variável", value_name="Valor")
-        ax = sns.boxplot(x="Variável", y="Valor", data=df_long, color="#87CEFA", linewidth=1.5)
-
-        medias = df_long.groupby("Variável")["Valor"].mean()
-        for i, (variavel, media) in enumerate(medias.items()):
-            plt.scatter(i, media, color="blue", marker="D", s=50, label="Média" if i == 0 else "")
-
-        ax.set_xlabel("Variável")
-        ax.set_ylabel("Valor")
-        ax.set_title("Boxplot Comparativo", fontsize=14, weight="bold")
-
-    sns.despine()
+# 📊 Gráfico de Boxplot Simples (Y numérica)
+def grafico_boxplot_simples(df, colunas, coluna_y=None):
+    if not coluna_y:
+        raise ValueError("É necessário selecionar a coluna Y para gerar o boxplot.")
+    serie = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
+    serie = pd.to_numeric(serie, errors="coerce").dropna()
+    if serie.empty:
+        raise ValueError("Coluna Y não contém valores numéricos válidos.")
+    plt.figure(figsize=(6, 6))
+    ax = sns.boxplot(y=serie, width=0.3, color="#DDEEFF", fliersize=5)
+    media = serie.mean()
+    plt.scatter(0, media, color="blue", marker="D", s=60, label="Média")
+    plt.ylabel(coluna_y)
+    plt.title("Boxplot Simples")
+    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.legend()
     return salvar_grafico()
 
 # 💾 Salvar gráfico como imagem base64
@@ -151,15 +120,17 @@ def salvar_grafico():
     os.remove(caminho)
     return img_base64
 
+# 🔗 Dicionário de análises disponíveis
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
     "regressao_multipla": analise_regressao_linear_multipla,
     "regressao_logistica_binaria": analise_regressao_logistica_binaria
 }
 
+# 🔗 Dicionário de gráficos disponíveis
 GRAFICOS = {
     "scatter": grafico_dispersao,
-    "boxplot": grafico_boxplot
+    "boxplot": grafico_boxplot_simples
 }
 @app.post("/analise")
 async def analisar(
@@ -177,10 +148,10 @@ async def analisar(
                 if idx < len(df.columns):
                     return df.columns[idx]
                 else:
-                    raise ValueError(f"Coluna na posição '{valor}' não existe no arquivo. O arquivo tem apenas {len(df.columns)} colunas.")
+                    raise ValueError(f"Coluna na posição '{valor}' não existe no arquivo. Arquivo tem apenas {len(df.columns)} colunas.")
             return valor
 
-        # 📥 Leitura do arquivo Excel
+        # 🔄 Leitura do arquivo Excel
         if arquivo and arquivo.filename.endswith(".xlsx"):
             file_bytes = await arquivo.read()
             df = pd.read_excel(io.BytesIO(file_bytes), engine="openpyxl")
@@ -214,19 +185,23 @@ async def analisar(
         imagem_analise_base64 = None
         imagem_grafico_isolado_base64 = None
 
-        # 🧠 Análise estatística (com gráfico embutido)
+        # ✅ Caso 1: análise estatística (com gráfico acoplado, se houver)
         if ferramenta and ferramenta.strip():
             funcao = ANALISES.get(ferramenta.strip())
             if not funcao:
-                return JSONResponse(content={"erro": f"Análise estatística desconhecida: {ferramenta}"}, status_code=400)
+                return JSONResponse(content={"erro": "Análise estatística desconhecida."}, status_code=400)
             resultado_texto, imagem_analise_base64 = funcao(df, colunas_usadas)
 
-        # 📊 Gráfico isolado
+        # ✅ Caso 2: gráfico isolado (com ou sem análise)
         if grafico and grafico.strip():
             funcao = GRAFICOS.get(grafico.strip())
             if not funcao:
-                return JSONResponse(content={"erro": f"Gráfico desconhecido: {grafico}"}, status_code=400)
-            imagem_grafico_isolado_base64 = funcao(df, colunas_x_lista, coluna_y if coluna_y else None)
+                return JSONResponse(content={"erro": "Gráfico desconhecido."}, status_code=400)
+            # Passa também coluna_y explicitamente para o boxplot simples
+            if grafico.strip() == "boxplot":
+                imagem_grafico_isolado_base64 = funcao(df, colunas_usadas, coluna_y=interpretar_coluna(df, coluna_y))
+            else:
+                imagem_grafico_isolado_base64 = funcao(df, colunas_usadas)
 
         if not ferramenta and not grafico:
             return JSONResponse(content={"erro": "Nenhuma ferramenta selecionada."}, status_code=400)
