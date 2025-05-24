@@ -12,18 +12,6 @@ import numpy as np
 
 app = FastAPI()
 
-def formatar_analise(nome_teste, premissas, resultado, conclusao):
-    return (
-        "1. Nome do teste estatístico aplicado:\n"
-        f"{nome_teste}\n\n"
-        "2. Premissas:\n"
-        f"{premissas}\n\n"
-        "3. Resultado do teste:\n"
-        f"{resultado}\n\n"
-        "4. Conclusão:\n"
-        f"{conclusao}"
-    )
-
 def analise_regressao_linear_simples(df, colunas):
     X = df[colunas[0]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
     Y = df[colunas[1]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
@@ -37,14 +25,7 @@ def analise_regressao_linear_simples(df, colunas):
     X_const = sm.add_constant(X)
     modelo = sm.OLS(Y, X_const).fit()
     p_valor = modelo.pvalues[1]
-
-    nome_teste = "Regressão Linear Simples"
-    premissas = "Os resíduos da regressão são normalmente distribuídos, independentes e têm variância constante (homocedasticidade)."
-    resultado = f"Valor-p da variável {colunas[0]}: {p_valor:.3f}"
-    conclusao = f"{'Houve' if p_valor < 0.05 else 'Não houve'} uma diferença significativa, com 95% de confiança, indicando que a variável {colunas[0]} {'tem' if p_valor < 0.05 else 'não tem'} um impacto significativo sobre {colunas[1]}."
-
-    resumo = formatar_analise(nome_teste, premissas, resultado, conclusao)
-
+    resumo = f"Valor-p da variável {colunas[0]}: {p_valor:.3f}"
     plt.figure(figsize=(8, 6))
     sns.regplot(x=X, y=Y, ci=None, line_kws={"color": "red"})
     plt.xlabel(colunas[0])
@@ -59,13 +40,7 @@ def analise_regressao_linear_multipla(df, colunas):
     modelo = sm.OLS(Y, X_const).fit()
     r2 = modelo.rsquared_adj
     p_valor = modelo.f_pvalue
-
-    nome_teste = "Regressão Linear Múltipla"
-    premissas = "Linearidade, independência dos erros, homocedasticidade e normalidade dos resíduos."
-    resultado = f"R² ajustado = {r2:.3f}, Valor-p global do modelo = {p_valor:.3f}"
-    conclusao = f"{'O modelo explica' if p_valor < 0.05 else 'O modelo não explica'} significativamente a variável {colunas[-1]} com 95% de confiança."
-
-    resumo = formatar_analise(nome_teste, premissas, resultado, conclusao)
+    resumo = f"R² ajustado = {r2:.3f}, Valor-p global do modelo = {p_valor:.3f}"
     return resumo, None
 
 def analise_regressao_logistica_binaria(df, colunas):
@@ -77,14 +52,7 @@ def analise_regressao_logistica_binaria(df, colunas):
     fpr, tpr, _ = roc_curve(y, y_prob)
     roc_auc = auc(fpr, tpr)
     p_valor = modelo.llr_pvalue
-
-    nome_teste = "Regressão Logística Binária"
-    premissas = "Observações independentes, ausência de multicolinearidade, e relação linear entre preditores contínuos e o logit da variável dependente."
-    resultado = f"AUC da curva ROC = {roc_auc:.2f}, Valor-p global do modelo = {p_valor:.3f}"
-    conclusao = f"{'O modelo é estatisticamente significativo' if p_valor < 0.05 else 'O modelo não é estatisticamente significativo'}, com 95% de confiança."
-
-    resumo = formatar_analise(nome_teste, premissas, resultado, conclusao)
-
+    resumo = f"AUC da curva ROC = {roc_auc:.2f}, Valor-p global do modelo = {p_valor:.3f}"
     plt.figure(figsize=(8, 6))
     plt.plot(fpr, tpr, label=f'ROC curve (area = {roc_auc:.2f})')
     plt.plot([0, 1], [0, 1], 'k--')
@@ -121,7 +89,6 @@ ANALISES = {
 GRAFICOS = {
     "scatter": grafico_dispersao
 }
-
 @app.post("/analise")
 async def analisar(
     arquivo: UploadFile = File(None),
@@ -150,11 +117,9 @@ async def analisar(
         df.columns = df.columns.str.strip()
         colunas_usadas = []
 
-        # coluna_y
         if coluna_y:
             colunas_usadas.append(interpretar_coluna(df, coluna_y))
 
-        # colunas_x — pode vir como string ou lista
         print("🧪 Valor bruto de colunas_x:", colunas_x)
         colunas_x_lista = []
         if colunas_x:
@@ -167,7 +132,6 @@ async def analisar(
         for c in colunas_x_lista:
             colunas_usadas.append(interpretar_coluna(df, c))
 
-        # Depuração
         print("🧪 Colunas recebidas do formulário (interpretação final):", colunas_usadas)
         print("🧪 Colunas reais no DataFrame:", list(df.columns))
 
@@ -181,12 +145,14 @@ async def analisar(
         resultado_texto = None
         imagem_base64 = None
 
+        # Faz a análise estatística apenas se ferramenta estiver definida
         if ferramenta and ferramenta.strip():
             funcao = ANALISES.get(ferramenta.strip())
             if not funcao:
                 return JSONResponse(content={"erro": "Análise estatística desconhecida."}, status_code=400)
             resultado_texto, imagem_base64 = funcao(df, colunas_usadas)
 
+        # Se ferramenta não foi fornecida, mas gráfico foi, gera apenas o gráfico
         elif grafico and grafico.strip():
             funcao = GRAFICOS.get(grafico.strip())
             if not funcao:
@@ -197,7 +163,7 @@ async def analisar(
             return JSONResponse(content={"erro": "Nenhuma ferramenta selecionada."}, status_code=400)
 
         return {
-            "analise": resultado_texto,
+            "analise": resultado_texto or "",   # importante: se não houver análise, envia string vazia
             "grafico_base64": imagem_base64,
             "colunas_utilizadas": colunas_usadas
         }
@@ -206,4 +172,3 @@ async def analisar(
         return JSONResponse(content={"erro": str(e)}, status_code=400)
     except Exception as e:
         return JSONResponse(content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)}, status_code=500)
-
