@@ -150,24 +150,24 @@ async def analisar(
         df.columns = df.columns.str.strip()
         colunas_usadas = []
 
-        # Y
+        # coluna_y
         if coluna_y:
             colunas_usadas.append(interpretar_coluna(df, coluna_y))
 
-        # X — aceita string ou lista
+        # colunas_x — pode vir como string ou lista
         print("🧪 Valor bruto de colunas_x:", colunas_x)
-        if isinstance(colunas_x, str):
-            colunas_x_lista = [x.strip() for x in colunas_x.split(",") if x.strip()]
-        elif isinstance(colunas_x, list):
-            colunas_x_lista = [x.strip() for x in colunas_x if isinstance(x, str) and x.strip()]
-        else:
-            colunas_x_lista = []
-
+        colunas_x_lista = []
+        if colunas_x:
+            if isinstance(colunas_x, str):
+                colunas_x_lista = [x.strip() for x in colunas_x.split(",") if x.strip()]
+            elif isinstance(colunas_x, list):
+                colunas_x_lista = [x.strip() for x in colunas_x if isinstance(x, str) and x.strip()]
         print("🧪 Lista extraída de colunas_x:", colunas_x_lista)
+
         for c in colunas_x_lista:
             colunas_usadas.append(interpretar_coluna(df, c))
 
-        # 🔎 Logs
+        # Depuração
         print("🧪 Colunas recebidas do formulário (interpretação final):", colunas_usadas)
         print("🧪 Colunas reais no DataFrame:", list(df.columns))
 
@@ -206,3 +206,4 @@ async def analisar(
         return JSONResponse(content={"erro": str(e)}, status_code=400)
     except Exception as e:
         return JSONResponse(content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)}, status_code=500)
+
