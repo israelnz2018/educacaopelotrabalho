@@ -130,55 +130,50 @@ async def analisar(
             colunas_usadas.append(interpretar_coluna(df, coluna_y))
 
         # 🧪 Conversão de colunas_x (string ou lista)
-        print("🧪 Valor bruto de colunas_x:", colunas_x)
         colunas_x_lista = []
         if colunas_x:
             if isinstance(colunas_x, str):
                 colunas_x_lista = [x.strip() for x in colunas_x.split(",") if x.strip()]
             elif isinstance(colunas_x, list):
                 colunas_x_lista = [x.strip() for x in colunas_x if isinstance(x, str) and x.strip()]
-        print("🧪 Lista extraída de colunas_x:", colunas_x_lista)
 
         for c in colunas_x_lista:
             colunas_usadas.append(interpretar_coluna(df, c))
 
-        print("🧪 Colunas recebidas do formulário (interpretação final):", colunas_usadas)
-        print("🧪 Colunas reais no DataFrame:", list(df.columns))
-
-        # ❌ Nenhuma coluna fornecida
         if not colunas_usadas:
             return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
 
-        # ❌ Verificação de colunas inválidas
         for col in colunas_usadas:
             if col not in df.columns:
                 return JSONResponse(content={"erro": f"Coluna '{col}' não encontrada no arquivo."}, status_code=400)
 
         resultado_texto = None
-        imagem_base64 = None
+        imagem_analise_base64 = None
+        imagem_grafico_isolado_base64 = None
 
-        # ✅ Caso 1: análise estatística (com gráfico acoplado, se existir)
+        # ✅ Caso 1: análise estatística (com gráfico acoplado, se houver)
         if ferramenta and ferramenta.strip():
             funcao = ANALISES.get(ferramenta.strip())
             if not funcao:
                 return JSONResponse(content={"erro": "Análise estatística desconhecida."}, status_code=400)
-            resultado_texto, imagem_base64 = funcao(df, colunas_usadas)
+            resultado_texto, imagem_analise_base64 = funcao(df, colunas_usadas)
 
-        # ✅ Caso 2: gráfico isolado (sem análise)
-        elif grafico and grafico.strip():
+        # ✅ Caso 2: gráfico isolado (com ou sem análise)
+        if grafico and grafico.strip():
             funcao = GRAFICOS.get(grafico.strip())
             if not funcao:
                 return JSONResponse(content={"erro": "Gráfico desconhecido."}, status_code=400)
-            imagem_base64 = funcao(df, colunas_usadas)
+            imagem_grafico_isolado_base64 = funcao(df, colunas_usadas)
 
-        # ❌ Nenhuma ferramenta ou gráfico selecionado
-        else:
+        # ❌ Nenhuma ação solicitada
+        if not ferramenta and not grafico:
             return JSONResponse(content={"erro": "Nenhuma ferramenta selecionada."}, status_code=400)
 
-        # ✅ Retorno unificado
+        # ✅ Retorno com até dois gráficos
         return {
             "analise": resultado_texto or "",
-            "grafico_base64": imagem_base64,
+            "grafico_base64": imagem_analise_base64,
+            "grafico_isolado_base64": imagem_grafico_isolado_base64,
             "colunas_utilizadas": colunas_usadas
         }
 
@@ -186,4 +181,3 @@ async def analisar(
         return JSONResponse(content={"erro": str(e)}, status_code=400)
     except Exception as e:
         return JSONResponse(content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)}, status_code=500)
-
