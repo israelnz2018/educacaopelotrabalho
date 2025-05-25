@@ -92,22 +92,30 @@ def grafico_dispersao(df, colunas):
     return salvar_grafico()
 
 # 📊 Gráfico de Boxplot Simples (Y numérica)
+
 def grafico_boxplot_simples(df, colunas, coluna_y=None):
     if not coluna_y:
-        raise ValueError("É necessário selecionar a coluna Y para gerar o boxplot.")
-    serie = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
-    serie = pd.to_numeric(serie, errors="coerce").dropna()
-    if serie.empty:
-        raise ValueError("Coluna Y não contém valores numéricos válidos.")
+        raise ValueError("Para o boxplot simples, a coluna Y (numérica) é obrigatória.")
+
+    y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
+    y = pd.to_numeric(y, errors="coerce").dropna()
+    if len(y) < 2:
+        raise ValueError("Coluna Y deve conter ao menos dois valores numéricos.")
+
+    df_box = pd.DataFrame({coluna_y: y, "grupo": "A"})
+
     plt.figure(figsize=(6, 6))
-    ax = sns.boxplot(y=serie, width=0.3, color="#DDEEFF", fliersize=5)
-    media = serie.mean()
-    plt.scatter(0, media, color="blue", marker="D", s=60, label="Média")
+    sns.boxplot(data=df_box, x="grupo", y=coluna_y, color="#89CFF0", width=0.3)
+
+    # 👉 Adiciona ponto da média (losango) sobre o boxplot
+    sns.pointplot(data=df_box, x="grupo", y=coluna_y, estimator=np.mean,
+                  markers="D", color="red", scale=1.2, errwidth=0)
+
+    plt.xlabel("")
     plt.ylabel(coluna_y)
-    plt.title("Boxplot Simples")
-    plt.grid(True, linestyle="--", alpha=0.5)
-    plt.legend()
+    plt.title("Boxplot Simples com Média (losango)")
     return salvar_grafico()
+
 
 # 💾 Salvar gráfico como imagem base64
 def salvar_grafico():
