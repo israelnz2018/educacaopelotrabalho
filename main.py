@@ -12,6 +12,27 @@ import numpy as np
 
 app = FastAPI()
 
+# 🎨 Estilo global tipo Minitab
+def estilizar_grafico(ax):
+    ax.set_facecolor('white')
+    ax.figure.set_facecolor('white')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_color('#333333')
+    ax.spines['bottom'].set_color('#333333')
+    ax.tick_params(axis='x', colors='#333333', labelsize=10)
+    ax.tick_params(axis='y', colors='#333333', labelsize=10)
+    ax.title.set_fontsize(14)
+    ax.title.set_color('#333333')
+    ax.xaxis.label.set_size(12)
+    ax.yaxis.label.set_size(12)
+    ax.xaxis.label.set_color('#333333')
+    ax.yaxis.label.set_color('#333333')
+    ax.grid(True, linestyle='--', linewidth=0.5, alpha=0.6)
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontname('Arial')
+        label.set_color('#333333')
+
 # 🔍 Regressão Linear Simples
 def analise_regressao_linear_simples(df, colunas):
     X = df[colunas[0]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
@@ -44,10 +65,11 @@ def analise_regressao_linear_simples(df, colunas):
 """.strip()
 
     plt.figure(figsize=(8, 6))
-    sns.regplot(x=X, y=Y, ci=None, line_kws={"color": "red"})
+    ax = sns.regplot(x=X, y=Y, ci=None, line_kws={"color": "red"})
     plt.xlabel(colunas[0])
     plt.ylabel(colunas[1])
     plt.title("Regressão Linear Simples")
+    estilizar_grafico(ax)
 
     return resumo, salvar_grafico()
 
@@ -73,26 +95,27 @@ def analise_regressao_logistica_binaria(df, colunas):
     roc_auc = auc(fpr, tpr)
     p_valor = modelo.llr_pvalue
     resumo = f"AUC da curva ROC = {roc_auc:.2f}, Valor-p global do modelo = {p_valor:.3f}"
-    plt.figure(figsize=(8, 6))
-    plt.plot(fpr, tpr, label=f'ROC curve (area = {roc_auc:.2f})')
-    plt.plot([0, 1], [0, 1], 'k--')
-    plt.xlabel('FPR')
-    plt.ylabel('TPR')
-    plt.title('Curva ROC - Regressão Logística')
-    plt.legend()
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.plot(fpr, tpr, label=f'ROC curve (area = {roc_auc:.2f})')
+    ax.plot([0, 1], [0, 1], 'k--')
+    ax.set_xlabel('FPR')
+    ax.set_ylabel('TPR')
+    ax.set_title('Curva ROC - Regressão Logística')
+    ax.legend()
+    estilizar_grafico(ax)
     return resumo, salvar_grafico()
 
 # 📊 Gráfico de Dispersão
 def grafico_dispersao(df, colunas):
     if len(colunas) < 2:
         raise ValueError("Gráfico de dispersão requer exatamente duas colunas.")
-    plt.figure(figsize=(8, 6))
-    sns.scatterplot(x=df[colunas[0]], y=df[colunas[1]])
-    plt.title("Gráfico de Dispersão")
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.scatterplot(x=df[colunas[0]], y=df[colunas[1]], ax=ax)
+    ax.set_title("Gráfico de Dispersão")
+    estilizar_grafico(ax)
     return salvar_grafico()
 
 # 📊 Gráfico de Boxplot Simples (Y numérica)
-
 def grafico_boxplot_simples(df, colunas, coluna_y=None):
     if not coluna_y:
         raise ValueError("Para o boxplot simples, a coluna Y (numérica) é obrigatória.")
@@ -103,19 +126,18 @@ def grafico_boxplot_simples(df, colunas, coluna_y=None):
         raise ValueError("Coluna Y deve conter ao menos dois valores numéricos.")
 
     df_box = pd.DataFrame({coluna_y: y, "grupo": "A"})
-
-    plt.figure(figsize=(6, 6))
-    sns.boxplot(data=df_box, x="grupo", y=coluna_y, color="#89CFF0", width=0.3)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    sns.boxplot(data=df_box, x="grupo", y=coluna_y, color="#89CFF0", width=0.3, ax=ax)
 
     # 👉 Adiciona ponto da média (losango) sobre o boxplot
     sns.pointplot(data=df_box, x="grupo", y=coluna_y, estimator=np.mean,
-                  markers="D", color="red", scale=1.2, errwidth=0)
+                  markers="D", color="red", scale=1.2, errwidth=0, ax=ax)
 
-    plt.xlabel("")
-    plt.ylabel(coluna_y)
-    plt.title("Boxplot Simples com Média (losango)")
+    ax.set_xlabel("")
+    ax.set_ylabel(coluna_y)
+    ax.set_title("Boxplot Simples com Média (losango)")
+    estilizar_grafico(ax)
     return salvar_grafico()
-
 
 # 💾 Salvar gráfico como imagem base64
 def salvar_grafico():
@@ -133,13 +155,31 @@ ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
     "regressao_multipla": analise_regressao_linear_multipla,
     "regressao_logistica_binaria": analise_regressao_logistica_binaria
+    "regressao_logistica_nominal": None,
+    "regressao_logistica_ordinal": None,
+    "teste_2_sample_t": None,
+    "teste_paired_t": None,
+    "teste_variancias": None,
+    "teste_1_sample_t": None,
+    "intervalo_confianca": None,
+    "teste_anova": None,
+    "teste_normalidade": None
 }
 
 # 🔗 Dicionário de gráficos disponíveis
 GRAFICOS = {
-    "scatter": grafico_dispersao,
-    "boxplot": grafico_boxplot_simples
+    "dispersao_simples": grafico_dispersao,
+    "boxplot_simples": grafico_boxplot_simples,
+    "boxplot_multiplo": None,
+    "boxplot_empilhado": None,
+    "histograma_simples": None,
+    "histograma_multiplo": None,
+    "linha": None,
+    "pareto": None,
+    "pizza": None,
+    "sumario": None
 }
+
 @app.post("/analise")
 async def analisar(
     arquivo: UploadFile = File(None),
