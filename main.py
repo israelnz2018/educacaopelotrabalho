@@ -154,7 +154,7 @@ def salvar_grafico():
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
     "regressao_multipla": analise_regressao_linear_multipla,
-    "regressao_logistica_binaria": analise_regressao_logistica_binaria
+    "regressao_logistica_binaria": analise_regressao_logistica_binaria,
     "regressao_logistica_nominal": None,
     "regressao_logistica_ordinal": None,
     "teste_2_sample_t": None,
