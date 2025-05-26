@@ -12,27 +12,6 @@ import numpy as np
 
 app = FastAPI()
 
-# 🎨 Estilo global tipo Minitab
-def estilizar_grafico(ax):
-    ax.set_facecolor('white')
-    ax.figure.set_facecolor('white')
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_color('#333333')
-    ax.spines['bottom'].set_color('#333333')
-    ax.tick_params(axis='x', colors='#333333', labelsize=10)
-    ax.tick_params(axis='y', colors='#333333', labelsize=10)
-    ax.title.set_fontsize(14)
-    ax.title.set_color('#333333')
-    ax.xaxis.label.set_size(12)
-    ax.yaxis.label.set_size(12)
-    ax.xaxis.label.set_color('#333333')
-    ax.yaxis.label.set_color('#333333')
-    ax.grid(True, linestyle='--', linewidth=0.5, alpha=0.6)
-    for label in ax.get_xticklabels() + ax.get_yticklabels():
-        label.set_fontname('Arial')
-        label.set_color('#333333')
-
 # 🔍 Regressão Linear Simples
 def analise_regressao_linear_simples(df, colunas):
     X = df[colunas[0]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
@@ -246,3 +225,4 @@ async def analisar(
         return JSONResponse(content={"erro": str(e)}, status_code=400)
     except Exception as e:
         return JSONResponse(content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)}, status_code=500)
+
