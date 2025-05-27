@@ -137,6 +137,35 @@ def grafico_boxplot_simples(df, colunas, coluna_y=None):
     plt.title("Boxplot Simples com Média (losango)")
     return salvar_grafico()
 
+def grafico_pareto(df, colunas):
+    if len(colunas) != 1:
+        raise ValueError("O gráfico de Pareto requer exatamente uma coluna categórica.")
+
+    coluna = colunas[0]
+    contagem = df[coluna].value_counts().sort_values(ascending=False)
+    porcentagem = contagem / contagem.sum() * 100
+    acumulado = porcentagem.cumsum()
+
+    plt.figure(figsize=(10, 6))
+    aplicar_estilo_minitab()
+
+    # Barras de frequência
+    ax = sns.barplot(x=contagem.index, y=contagem.values, color="#89CFF0")
+    ax.set_ylabel("Frequência")
+    ax.set_xlabel(coluna)
+    ax.set_title("Gráfico de Pareto")
+
+    # Linha acumulada (%)
+    ax2 = ax.twinx()
+    ax2.plot(contagem.index, acumulado.values, color="red", marker="o", linewidth=2)
+    ax2.set_ylabel("Acumulado (%)")
+    ax2.set_ylim(0, 110)
+
+    # Rótulos no eixo x girados para melhor leitura
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right")
+
+    return salvar_grafico()
+
 # 💾 Salvar gráfico como imagem base64
 def salvar_grafico():
     caminho = "grafico.png"
@@ -158,7 +187,8 @@ ANALISES = {
 # 🔗 Dicionário de gráficos disponíveis
 GRAFICOS = {
     "scatter": grafico_dispersao,
-    "boxplot_simples": grafico_boxplot_simples
+    "boxplot_simples": grafico_boxplot_simples,
+    "grafico_pareto": grafico_pareto
 }
 
 @app.post("/analise")
