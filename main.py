@@ -220,8 +220,9 @@ async def analisar(
         df.columns = df.columns.str.strip()
         colunas_usadas = []
 
-        if coluna_y:
+        if coluna_y and coluna_y.strip():
             colunas_usadas.append(interpretar_coluna(df, coluna_y))
+
 
         colunas_x_lista = []
         if colunas_x:
