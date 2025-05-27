@@ -113,7 +113,6 @@ def grafico_dispersao(df, colunas):
     return salvar_grafico()
 
 # 📊 Gráfico de Boxplot Simples (Y numérica)
-
 def grafico_boxplot_simples(df, colunas, coluna_y=None):
     if not coluna_y:
         raise ValueError("Para o boxplot simples, a coluna Y (numérica) é obrigatória.")
@@ -126,6 +125,8 @@ def grafico_boxplot_simples(df, colunas, coluna_y=None):
     df_box = pd.DataFrame({coluna_y: y, "grupo": "A"})
 
     plt.figure(figsize=(6, 6))
+    aplicar_estilo_minitab()  # 🎨 Aplicar estilo padrão
+
     sns.boxplot(data=df_box, x="grupo", y=coluna_y, color="#89CFF0", width=0.3)
 
     # 👉 Adiciona ponto da média (losango) sobre o boxplot
@@ -136,7 +137,6 @@ def grafico_boxplot_simples(df, colunas, coluna_y=None):
     plt.ylabel(coluna_y)
     plt.title("Boxplot Simples com Média (losango)")
     return salvar_grafico()
-
 
 # 💾 Salvar gráfico como imagem base64
 def salvar_grafico():
@@ -154,12 +154,30 @@ ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
     "regressao_multipla": analise_regressao_linear_multipla,
     "regressao_logistica_binaria": analise_regressao_logistica_binaria
+    "regressao_logistica_nominal": analise_regressao_logistica_nominal,
+    "regressao_logistica_ordinal": analise_regressao_logistica_ordinal,
+    "teste_2sample_t": analise_teste_2sample_t,
+    "teste_paired_t": analise_teste_paired_t,
+    "teste_variancias": analise_teste_variancias,
+    "teste_1sample_t": analise_teste_1sample_t,
+    "intervalo_confianca": analise_intervalo_confianca,
+    "teste_anova": analise_teste_anova,
+    "teste_normalidade": analise_teste_normalidade
 }
 
 # 🔗 Dicionário de gráficos disponíveis
 GRAFICOS = {
     "scatter": grafico_dispersao,
-    "boxplot": grafico_boxplot_simples
+    "boxplot_simples": grafico_boxplot_simples,
+    "boxplot_multiplo": grafico_boxplot_multiplo,
+    "boxplot_empilhado": grafico_boxplot_empilhado,
+    "histograma_simples": grafico_histograma_simples,
+    "histograma_multiplo": grafico_histograma_multiplo,
+    "grafico_bolhas": grafico_bolhas,
+    "grafico_linha": grafico_linha,
+    "grafico_pareto": grafico_pareto,
+    "grafico_pizza": grafico_pizza,
+    "grafico_sumario": grafico_sumario
 }
 @app.post("/analise")
 async def analisar(
