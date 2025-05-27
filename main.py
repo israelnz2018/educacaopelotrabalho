@@ -152,31 +152,13 @@ def salvar_grafico():
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
     "regressao_multipla": analise_regressao_linear_multipla,
-    "regressao_logistica_binaria": analise_regressao_logistica_binaria,
-    "regressao_logistica_nominal": analise_regressao_logistica_nominal,
-    "regressao_logistica_ordinal": analise_regressao_logistica_ordinal,
-    "teste_2sample_t": analise_teste_2sample_t,
-    "teste_paired_t": analise_teste_paired_t,
-    "teste_variancias": analise_teste_variancias,
-    "teste_1sample_t": analise_teste_1sample_t,
-    "intervalo_confianca": analise_intervalo_confianca,
-    "teste_anova": analise_teste_anova,
-    "teste_normalidade": analise_teste_normalidade
+    "regressao_logistica_binaria": analise_regressao_logistica_binaria
 }
 
 # 🔗 Dicionário de gráficos disponíveis
 GRAFICOS = {
     "scatter": grafico_dispersao,
-    "boxplot_simples": grafico_boxplot_simples,
-    "boxplot_multiplo": grafico_boxplot_multiplo,
-    "boxplot_empilhado": grafico_boxplot_empilhado,
-    "histograma_simples": grafico_histograma_simples,
-    "histograma_multiplo": grafico_histograma_multiplo,
-    "grafico_bolhas": grafico_bolhas,
-    "grafico_linha": grafico_linha,
-    "grafico_pareto": grafico_pareto,
-    "grafico_pizza": grafico_pizza,
-    "grafico_sumario": grafico_sumario
+    "boxplot_simples": grafico_boxplot_simples
 }
 
 @app.post("/analise")
