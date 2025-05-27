@@ -12,6 +12,27 @@ import numpy as np
 
 app = FastAPI()
 
+# 🎨 Estilo Global - Inspirado no Minitab
+def aplicar_estilo_minitab():
+    plt.style.use("default")
+    plt.rcParams.update({
+        "figure.facecolor": "white",
+        "axes.facecolor": "white",
+        "axes.edgecolor": "#333333",
+        "axes.labelcolor": "#333333",
+        "axes.titleweight": "bold",
+        "axes.titlesize": 14,
+        "axes.labelsize": 12,
+        "xtick.color": "#333333",
+        "ytick.color": "#333333",
+        "font.family": "Arial",
+        "grid.linestyle": "--",
+        "grid.color": "#CCCCCC",
+        "grid.alpha": 0.7,
+        "legend.frameon": False
+    })
+    plt.grid(True)
+
 # 🔍 Regressão Linear Simples
 def analise_regressao_linear_simples(df, colunas):
     X = df[colunas[0]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
