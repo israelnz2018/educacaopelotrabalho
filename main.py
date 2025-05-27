@@ -65,6 +65,7 @@ def analise_regressao_linear_simples(df, colunas):
 """.strip()
 
     plt.figure(figsize=(8, 6))
+    aplicar_estilo_minitab()
     sns.regplot(x=X, y=Y, ci=None, line_kws={"color": "red"})
     plt.xlabel(colunas[0])
     plt.ylabel(colunas[1])
@@ -95,6 +96,7 @@ def analise_regressao_logistica_binaria(df, colunas):
     p_valor = modelo.llr_pvalue
     resumo = f"AUC da curva ROC = {roc_auc:.2f}, Valor-p global do modelo = {p_valor:.3f}"
     plt.figure(figsize=(8, 6))
+    aplicar_estilo_minitab()
     plt.plot(fpr, tpr, label=f'ROC curve (area = {roc_auc:.2f})')
     plt.plot([0, 1], [0, 1], 'k--')
     plt.xlabel('FPR')
@@ -108,6 +110,7 @@ def grafico_dispersao(df, colunas):
     if len(colunas) < 2:
         raise ValueError("Gráfico de dispersão requer exatamente duas colunas.")
     plt.figure(figsize=(8, 6))
+    aplicar_estilo_minitab()
     sns.scatterplot(x=df[colunas[0]], y=df[colunas[1]])
     plt.title("Gráfico de Dispersão")
     return salvar_grafico()
@@ -125,14 +128,10 @@ def grafico_boxplot_simples(df, colunas, coluna_y=None):
     df_box = pd.DataFrame({coluna_y: y, "grupo": "A"})
 
     plt.figure(figsize=(6, 6))
-    aplicar_estilo_minitab()  # 🎨 Aplicar estilo padrão
-
+    aplicar_estilo_minitab()
     sns.boxplot(data=df_box, x="grupo", y=coluna_y, color="#89CFF0", width=0.3)
-
-    # 👉 Adiciona ponto da média (losango) sobre o boxplot
     sns.pointplot(data=df_box, x="grupo", y=coluna_y, estimator=np.mean,
                   markers="D", color="red", scale=1.2, errwidth=0)
-
     plt.xlabel("")
     plt.ylabel(coluna_y)
     plt.title("Boxplot Simples com Média (losango)")
@@ -153,7 +152,7 @@ def salvar_grafico():
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
     "regressao_multipla": analise_regressao_linear_multipla,
-    "regressao_logistica_binaria": analise_regressao_logistica_binaria
+    "regressao_logistica_binaria": analise_regressao_logistica_binaria,
     "regressao_logistica_nominal": analise_regressao_logistica_nominal,
     "regressao_logistica_ordinal": analise_regressao_logistica_ordinal,
     "teste_2sample_t": analise_teste_2sample_t,
@@ -179,6 +178,7 @@ GRAFICOS = {
     "grafico_pizza": grafico_pizza,
     "grafico_sumario": grafico_sumario
 }
+
 @app.post("/analise")
 async def analisar(
     arquivo: UploadFile = File(None),
@@ -244,8 +244,8 @@ async def analisar(
             funcao = GRAFICOS.get(grafico.strip())
             if not funcao:
                 return JSONResponse(content={"erro": "Gráfico desconhecido."}, status_code=400)
-            # Passa também coluna_y explicitamente para o boxplot simples
-            if grafico.strip() == "boxplot":
+            # ⛑️ Ajuste: aplica coluna_y para qualquer gráfico do tipo boxplot
+            if grafico.strip().startswith("boxplot"):
                 imagem_grafico_isolado_base64 = funcao(df, colunas_usadas, coluna_y=interpretar_coluna(df, coluna_y))
             else:
                 imagem_grafico_isolado_base64 = funcao(df, colunas_usadas)
@@ -264,6 +264,7 @@ async def analisar(
         return JSONResponse(content={"erro": str(e)}, status_code=400)
     except Exception as e:
         return JSONResponse(content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)}, status_code=500)
+
 
 
 
