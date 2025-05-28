@@ -167,26 +167,36 @@ def grafico_pareto(df, colunas):
     return salvar_grafico()
 
 def grafico_boxplot_multiplo(df, colunas, coluna_y=None):
-    if not coluna_y or not colunas:
-        raise ValueError("Boxplot múltiplo requer uma coluna Y (numérica) e ao menos uma coluna X categórica.")
+    if not coluna_y or not coluna_y.strip():
+        raise ValueError("Você deve selecionar uma coluna Y com valores numéricos para o boxplot múltiplo.")
 
     coluna_y = coluna_y.strip()
-    colunas = [c.strip() for c in colunas if c.strip() and c.strip() != coluna_y]
 
-    if not colunas:
-        raise ValueError("Nenhuma coluna X válida encontrada.")
+    # Validação do título da Y
+    if coluna_y.startswith("Unnamed") or coluna_y not in df.columns:
+        raise ValueError(f"A coluna Y '{coluna_y}' não tem título válido ou não foi encontrada.")
 
-    # Y contínuo
+    # Trata Y
     y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
     y = pd.to_numeric(y, errors="coerce")
     if y.dropna().shape[0] < 2:
-        raise ValueError("Coluna Y deve conter ao menos dois valores numéricos válidos.")
+        raise ValueError("A coluna Y deve conter ao menos dois valores numéricos válidos.")
 
-    # X categórico (usa a primeira válida)
+    # Trata colunas X (remover Y e Unnamed)
+    colunas = [c.strip() for c in colunas if c.strip() and c.strip() != coluna_y and not c.strip().startswith("Unnamed")]
+
+    if not colunas:
+        raise ValueError("Nenhuma coluna X válida foi selecionada para o agrupamento.")
+
     x_col = colunas[0]
-    grupo = df[x_col].astype(str)
+    if x_col not in df.columns:
+        raise ValueError(f"A coluna X '{x_col}' não foi encontrada no arquivo.")
 
+    grupo = df[x_col].astype(str)
     df_plot = pd.DataFrame({coluna_y: y, x_col: grupo}).dropna()
+
+    if df_plot.empty:
+        raise ValueError("Os dados da coluna Y e do grupo X selecionado não têm valores válidos simultaneamente.")
 
     plt.figure(figsize=(10, 6))
     aplicar_estilo_minitab()
@@ -201,6 +211,7 @@ def grafico_boxplot_multiplo(df, colunas, coluna_y=None):
     plt.xticks(rotation=45)
 
     return salvar_grafico()
+
 
 # 💾 Salvar gráfico como imagem base64
 def salvar_grafico():
