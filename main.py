@@ -166,6 +166,42 @@ def grafico_pareto(df, colunas):
 
     return salvar_grafico()
 
+def grafico_boxplot_multiplo(df, colunas, coluna_y=None):
+    if not coluna_y or not colunas:
+        raise ValueError("Boxplot múltiplo requer uma coluna Y (numérica) e ao menos uma coluna X categórica.")
+
+    coluna_y = coluna_y.strip()
+    colunas = [c.strip() for c in colunas if c.strip() and c.strip() != coluna_y]
+
+    if not colunas:
+        raise ValueError("Nenhuma coluna X válida encontrada.")
+
+    # Y contínuo
+    y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
+    y = pd.to_numeric(y, errors="coerce")
+    if y.dropna().shape[0] < 2:
+        raise ValueError("Coluna Y deve conter ao menos dois valores numéricos válidos.")
+
+    # X categórico (usa a primeira válida)
+    x_col = colunas[0]
+    grupo = df[x_col].astype(str)
+
+    df_plot = pd.DataFrame({coluna_y: y, x_col: grupo}).dropna()
+
+    plt.figure(figsize=(10, 6))
+    aplicar_estilo_minitab()
+
+    sns.boxplot(data=df_plot, x=x_col, y=coluna_y, color="#89CFF0")
+    sns.pointplot(data=df_plot, x=x_col, y=coluna_y, estimator=np.mean,
+                  markers="D", color="red", scale=1.1, errwidth=0)
+
+    plt.title(f"Boxplot Múltiplo por '{x_col}'")
+    plt.xlabel(x_col)
+    plt.ylabel(coluna_y)
+    plt.xticks(rotation=45)
+
+    return salvar_grafico()
+
 # 💾 Salvar gráfico como imagem base64
 def salvar_grafico():
     caminho = "grafico.png"
@@ -188,7 +224,8 @@ ANALISES = {
 GRAFICOS = {
     "scatter": grafico_dispersao,
     "boxplot_simples": grafico_boxplot_simples,
-    "grafico_pareto": grafico_pareto
+    "grafico_pareto": grafico_pareto,
+    "boxplot_multiplo": grafico_boxplot_multiplo
 }
 
 @app.post("/analise")
