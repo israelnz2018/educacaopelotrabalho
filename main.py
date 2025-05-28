@@ -212,28 +212,24 @@ def grafico_boxplot_multiplo(df, colunas, coluna_y=None):
 
     return salvar_grafico()
 
+# 📊 Histograma Simples com Curva de Densidade (tipo Gauss)
 def grafico_histograma_simples(df, colunas, coluna_y=None):
-    if not coluna_y or not coluna_y.strip():
+    if not colunas or len(colunas) == 0:
         raise ValueError("Você deve selecionar uma coluna Y com dados numéricos para o histograma simples.")
 
-    coluna_y = coluna_y.strip()
-
-    if coluna_y.startswith("Unnamed") or coluna_y not in df.columns:
-        raise ValueError(f"A coluna Y '{coluna_y}' não tem título válido ou não foi encontrada.")
+    coluna_y = colunas[0]
 
     y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
     y = pd.to_numeric(y, errors="coerce").dropna()
 
     if len(y) < 2:
-        raise ValueError("A coluna Y deve conter ao menos dois valores numéricos válidos para gerar o histograma.")
+        raise ValueError("Coluna Y deve conter ao menos dois valores numéricos.")
 
     plt.figure(figsize=(8, 6))
-    aplicar_estilo_minitab()
-
-    plt.hist(y, bins="auto", color="#89CFF0", edgecolor="black")
-    plt.title(f"Histograma de '{coluna_y}'")
+    sns.histplot(y, kde=True, color="#89CFF0", edgecolor="black")
     plt.xlabel(coluna_y)
     plt.ylabel("Frequência")
+    plt.title("Histograma Simples com Curva de Densidade")
 
     return salvar_grafico()
 
