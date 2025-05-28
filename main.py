@@ -212,6 +212,30 @@ def grafico_boxplot_multiplo(df, colunas, coluna_y=None):
 
     return salvar_grafico()
 
+def grafico_histograma_simples(df, colunas, coluna_y=None):
+    if not coluna_y or not coluna_y.strip():
+        raise ValueError("Você deve selecionar uma coluna Y com dados numéricos para o histograma simples.")
+
+    coluna_y = coluna_y.strip()
+
+    if coluna_y.startswith("Unnamed") or coluna_y not in df.columns:
+        raise ValueError(f"A coluna Y '{coluna_y}' não tem título válido ou não foi encontrada.")
+
+    y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
+    y = pd.to_numeric(y, errors="coerce").dropna()
+
+    if len(y) < 2:
+        raise ValueError("A coluna Y deve conter ao menos dois valores numéricos válidos para gerar o histograma.")
+
+    plt.figure(figsize=(8, 6))
+    aplicar_estilo_minitab()
+
+    plt.hist(y, bins="auto", color="#89CFF0", edgecolor="black")
+    plt.title(f"Histograma de '{coluna_y}'")
+    plt.xlabel(coluna_y)
+    plt.ylabel("Frequência")
+
+    return salvar_grafico()
 
 # 💾 Salvar gráfico como imagem base64
 def salvar_grafico():
@@ -236,7 +260,8 @@ GRAFICOS = {
     "scatter": grafico_dispersao,
     "boxplot_simples": grafico_boxplot_simples,
     "grafico_pareto": grafico_pareto,
-    "boxplot_multiplo": grafico_boxplot_multiplo
+    "boxplot_multiplo": grafico_boxplot_multiplo,
+    "histograma_simples": grafico_histograma_simples
 }
 
 @app.post("/analise")
