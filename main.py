@@ -9,6 +9,7 @@ import os
 import statsmodels.api as sm
 from sklearn.metrics import roc_curve, auc
 import numpy as np
+from scipy import stats
 
 app = FastAPI()
 
@@ -233,6 +234,81 @@ def grafico_histograma_simples(df, colunas, coluna_y=None):
 
     return salvar_grafico()
 
+from scipy import stats
+
+def grafico_sumario(df, colunas, coluna_y=None):
+    if not colunas or len(colunas) == 0:
+        raise ValueError("Você deve selecionar uma coluna Y com dados numéricos para o gráfico sumário.")
+
+    coluna_y = colunas[0]
+
+    y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
+    y = pd.to_numeric(y, errors="coerce").dropna()
+
+    if len(y) < 3:
+        raise ValueError("Coluna Y deve conter ao menos três valores numéricos para gerar o gráfico sumário.")
+
+    imagens = []
+
+    # 🎯 Histograma com curva KDE
+    plt.figure(figsize=(8, 5))
+    aplicar_estilo_minitab()
+    sns.histplot(y, kde=True, color="#89CFF0", edgecolor="black")
+    plt.title(f"Histograma de '{coluna_y}' com Curva de Densidade")
+    plt.xlabel(coluna_y)
+    plt.ylabel("Frequência")
+    imagens.append(salvar_grafico())
+
+    # 📦 Boxplot
+    plt.figure(figsize=(6, 4))
+    aplicar_estilo_minitab()
+    sns.boxplot(y=y, color="#89CFF0")
+    plt.title("Boxplot com Outliers")
+    imagens.append(salvar_grafico())
+
+    # 📈 Intervalo de confiança para média e mediana
+    media = np.mean(y)
+    mediana = np.median(y)
+    n = len(y)
+    desvio = np.std(y, ddof=1)
+    erro_media = desvio / np.sqrt(n)
+    intervalo_media = stats.t.interval(0.95, n - 1, loc=media, scale=erro_media)
+    intervalo_mediana = (np.percentile(y, 25), np.percentile(y, 75))
+
+    plt.figure(figsize=(7, 3))
+    aplicar_estilo_minitab()
+    plt.errorbar(x=[media], y=[1], xerr=[[media - intervalo_media[0]], [intervalo_media[1] - media]], fmt='o', color='blue', label='Média', capsize=6)
+    plt.errorbar(x=[mediana], y=[0], xerr=[[mediana - intervalo_mediana[0]], [intervalo_mediana[1] - mediana]], fmt='o', color='black', label='Mediana', capsize=6)
+    plt.yticks([0, 1], ["Mediana", "Média"])
+    plt.title("Intervalos de Confiança de 95%")
+    plt.xlabel(coluna_y)
+    plt.legend()
+    imagens.append(salvar_grafico())
+
+    # 📋 Texto da análise estatística
+    normalidade = stats.normaltest(y)
+    texto = f"""
+**Resumo Estatístico para '{coluna_y}'**
+
+- Média: {media:.4f}
+- Mediana: {mediana:.4f}
+- Desvio Padrão: {desvio:.4f}
+- Variância: {np.var(y, ddof=1):.4f}
+- Mínimo: {np.min(y):.4f}
+- 1º Quartil: {np.percentile(y, 25):.4f}
+- 3º Quartil: {np.percentile(y, 75):.4f}
+- Máximo: {np.max(y):.4f}
+- Assimetria: {stats.skew(y):.4f}
+- Curtose: {stats.kurtosis(y):.4f}
+- N: {n}
+- Teste de Normalidade (D’Agostino):
+  - Estatística: {normalidade.statistic:.4f}
+  - Valor-p: {normalidade.pvalue:.4f}
+"""
+
+    return texto.strip(), imagens
+
+
 # 💾 Salvar gráfico como imagem base64
 def salvar_grafico():
     caminho = "grafico.png"
@@ -257,7 +333,8 @@ GRAFICOS = {
     "boxplot_simples": grafico_boxplot_simples,
     "grafico_pareto": grafico_pareto,
     "boxplot_multiplo": grafico_boxplot_multiplo,
-    "histograma_simples": grafico_histograma_simples
+    "histograma_simples": grafico_histograma_simples,
+    "grafico_sumario": grafico_sumario
 }
 
 @app.post("/analise")
