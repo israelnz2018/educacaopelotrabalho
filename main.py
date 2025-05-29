@@ -337,8 +337,7 @@ GRAFICOS = {
     "boxplot_simples": grafico_boxplot_simples,
     "grafico_pareto": grafico_pareto,
     "boxplot_multiplo": grafico_boxplot_multiplo,
-    "histograma_simples": grafico_histograma_simples,
-    "grafico_sumario": grafico_sumario
+    "histograma_simples": grafico_histograma_simples
 }
 
 @app.post("/analise")
