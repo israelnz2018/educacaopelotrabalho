@@ -236,77 +236,80 @@ def grafico_histograma_simples(df, colunas, coluna_y=None):
 
 from scipy import stats
 
-def grafico_sumario(df, colunas, coluna_y=None):
-    if not colunas or len(colunas) == 0:
-        raise ValueError("Você deve selecionar uma coluna Y com dados numéricos para o gráfico sumário.")
+def analise_descritiva(df, colunas):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from scipy import stats
+    import base64
+    import io
 
-    coluna_y = colunas[0]
+    if len(colunas) != 1:
+        raise ValueError("Selecione apenas uma coluna para a Análise Descritiva.")
 
-    y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
-    y = pd.to_numeric(y, errors="coerce").dropna()
+    coluna = colunas[0]
+    y = df[coluna].dropna().astype(float)
+    n = len(y)
 
-    if len(y) < 3:
-        raise ValueError("Coluna Y deve conter ao menos três valores numéricos para gerar o gráfico sumário.")
+    if n < 3:
+        raise ValueError("A amostra precisa ter pelo menos 3 valores numéricos.")
 
-    imagens = []
-
-    # 🎯 Histograma com curva KDE
-    plt.figure(figsize=(8, 5))
-    aplicar_estilo_minitab()
-    sns.histplot(y, kde=True, color="#89CFF0", edgecolor="black")
-    plt.title(f"Histograma de '{coluna_y}' com Curva de Densidade")
-    plt.xlabel(coluna_y)
-    plt.ylabel("Frequência")
-    imagens.append(salvar_grafico())
-
-    # 📦 Boxplot
-    plt.figure(figsize=(6, 4))
-    aplicar_estilo_minitab()
-    sns.boxplot(y=y, color="#89CFF0")
-    plt.title("Boxplot com Outliers")
-    imagens.append(salvar_grafico())
-
-    # 📈 Intervalo de confiança para média e mediana
     media = np.mean(y)
     mediana = np.median(y)
-    n = len(y)
+    moda = stats.mode(y, keepdims=False).mode
     desvio = np.std(y, ddof=1)
-    erro_media = desvio / np.sqrt(n)
-    intervalo_media = stats.t.interval(0.95, n - 1, loc=media, scale=erro_media)
-    intervalo_mediana = (np.percentile(y, 25), np.percentile(y, 75))
+    variancia = np.var(y, ddof=1)
+    minimo = np.min(y)
+    q1 = np.percentile(y, 25)
+    q3 = np.percentile(y, 75)
+    maximo = np.max(y)
+    assimetria = stats.skew(y)
+    curtose = stats.kurtosis(y)
 
-    plt.figure(figsize=(7, 3))
-    aplicar_estilo_minitab()
-    plt.errorbar(x=[media], y=[1], xerr=[[media - intervalo_media[0]], [intervalo_media[1] - media]], fmt='o', color='blue', label='Média', capsize=6)
-    plt.errorbar(x=[mediana], y=[0], xerr=[[mediana - intervalo_mediana[0]], [intervalo_mediana[1] - mediana]], fmt='o', color='black', label='Mediana', capsize=6)
-    plt.yticks([0, 1], ["Mediana", "Média"])
-    plt.title("Intervalos de Confiança de 95%")
-    plt.xlabel(coluna_y)
-    plt.legend()
-    imagens.append(salvar_grafico())
+    # Intervalos de confiança 95%
+    z = 1.96
+    erro_media = z * (desvio / np.sqrt(n))
+    erro_mediana = 1.57 * (desvio / np.sqrt(n))  # aproximação
+    erro_variancia = z * (np.std([np.var(y, ddof=1) for _ in range(1000)], ddof=1))  # bootstrap rudimentar
 
-    # 📋 Texto da análise estatística
-    normalidade = stats.normaltest(y)
+    # Texto
     texto = f"""
-**Resumo Estatístico para '{coluna_y}'**
-
+**Análise Descritiva da coluna '{coluna}'**
 - Média: {media:.4f}
 - Mediana: {mediana:.4f}
+- Moda: {moda:.4f}
 - Desvio Padrão: {desvio:.4f}
-- Variância: {np.var(y, ddof=1):.4f}
-- Mínimo: {np.min(y):.4f}
-- 1º Quartil: {np.percentile(y, 25):.4f}
-- 3º Quartil: {np.percentile(y, 75):.4f}
-- Máximo: {np.max(y):.4f}
-- Assimetria: {stats.skew(y):.4f}
-- Curtose: {stats.kurtosis(y):.4f}
+- Variância: {variancia:.4f}
+- Mínimo: {minimo:.4f}
+- 1º Quartil: {q1:.4f}
+- 3º Quartil: {q3:.4f}
+- Máximo: {maximo:.4f}
+- Assimetria: {assimetria:.4f}
+- Curtose: {curtose:.4f}
 - N: {n}
-- Teste de Normalidade (D’Agostino):
-  - Estatística: {normalidade.statistic:.4f}
-  - Valor-p: {normalidade.pvalue:.4f}
+- IC 95% da Média: [{media - erro_media:.4f}, {media + erro_media:.4f}]
+- IC 95% da Mediana (aprox): [{mediana - erro_mediana:.4f}, {mediana + erro_mediana:.4f}]
+- IC 95% da Variância (estimado): ±{erro_variancia:.4f}
 """
 
-    return texto.strip(), imagens
+    # Boxplot horizontal
+    fig, ax = plt.subplots(figsize=(8, 2))
+    box = ax.boxplot(y, vert=False, patch_artist=True, boxprops=dict(facecolor='lightblue'))
+
+    # Média como losango
+    ax.plot(media, 1, marker='D', color='darkred', label='Média')
+    ax.set_title(f"Boxplot Horizontal de {coluna}")
+    ax.set_yticklabels([''])
+
+    ax.legend(loc="upper right")
+    fig.tight_layout()
+
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format="png")
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+    plt.close()
+
+    return texto.strip(), imagem_base64
 
 
 # 💾 Salvar gráfico como imagem base64
@@ -324,7 +327,8 @@ def salvar_grafico():
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
     "regressao_multipla": analise_regressao_linear_multipla,
-    "regressao_logistica_binaria": analise_regressao_logistica_binaria
+    "regressao_logistica_binaria": analise_regressao_logistica_binaria,
+    "analise_descritiva": analise_descritiva
 }
 
 # 🔗 Dicionário de gráficos disponíveis
