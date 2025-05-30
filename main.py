@@ -1,11 +1,12 @@
 from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import JSONResponse
 import pandas as pd
+
 from leitura import ler_arquivo
 from suporte import interpretar_coluna
-from analises_estatisticas import ANALISES
+from estatistica import ANALISES
 from graficos import GRAFICOS
-# from interpretador_ia import interpretar_analise  # (ativar quando usar IA)
+from agente import interpretar_analise  # ✅ Agente ativado
 
 app = FastAPI()
 
@@ -19,7 +20,6 @@ async def analisar(
     colunas_x: str | list[str] = Form(None)
 ):
     try:
-        # Leitura e validação do arquivo
         df = await ler_arquivo(arquivo)
         colunas_usadas = []
 
@@ -48,16 +48,17 @@ async def analisar(
         imagem_grafico_isolado_base64 = None
         explicacao_ia = None
 
-        # Análise estatística (com gráfico acoplado)
+        # ✅ Caso 1: análise estatística
         if ferramenta and ferramenta.strip():
             funcao = ANALISES.get(ferramenta.strip())
             if not funcao:
                 return JSONResponse(content={"erro": "Análise estatística desconhecida."}, status_code=400)
             resultado_texto, imagem_analise_base64 = funcao(df, colunas_usadas)
 
-            # explicacao_ia = interpretar_analise(resultado_texto)  # Ativar depois
+            # ✅ Interpretação da análise pelo agente de IA
+            explicacao_ia = interpretar_analise(resultado_texto)
 
-        # Gráfico isolado
+        # ✅ Caso 2: gráfico isolado
         if grafico and grafico.strip():
             funcao = GRAFICOS.get(grafico.strip())
             if not funcao:
@@ -72,9 +73,9 @@ async def analisar(
 
         return {
             "analise": resultado_texto or "",
+            "explicacao_ia": explicacao_ia,
             "grafico_base64": imagem_analise_base64,
             "grafico_isolado_base64": imagem_grafico_isolado_base64,
-            # "explicacao_ia": explicacao_ia,
             "colunas_utilizadas": colunas_usadas
         }
 
@@ -82,5 +83,3 @@ async def analisar(
         return JSONResponse(content={"erro": str(e)}, status_code=400)
     except Exception as e:
         return JSONResponse(content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)}, status_code=500)
-
-
