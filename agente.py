@@ -1,23 +1,34 @@
-import openai
+# agente.py
+import os
 
-# Configure sua chave da OpenAI (ou use variável de ambiente)
-openai.api_key = "SUA_CHAVE_AQUI"  # Substitua ou remova se usar variável externa
+try:
+    import openai
+except ImportError:
+    openai = None
 
-def interpretar_analise(texto_analise: str) -> str:
+def interpretar_resultado(analise_texto):
+    # ✅ Verifica se a chave está configurada e se o módulo openai está disponível
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
+    if not OPENAI_API_KEY or not openai:
+        return "O agente de IA ainda não está ativado. Configure a chave OPENAI_API_KEY para usar esta função."
+
+    openai.api_key = OPENAI_API_KEY
+
     prompt = f"""
-Você é um especialista em estatística. Interprete de forma clara e profissional a seguinte análise estatística para um usuário leigo:
+Você é um especialista em estatística com habilidade de explicar análises de forma clara e útil. Analise o seguinte resultado estatístico e explique o que ele significa, de forma prática e objetiva:
 
-{texto_analise}
+\"\"\"{analise_texto}\"\"\"
 
-Explique o que os valores significam, se há algo relevante, e o que isso poderia indicar na prática.
+Evite repetir números. Foque no significado e nas implicações dos resultados.
 """
 
-    resposta = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "Você é um especialista em estatística que explica análises de forma clara para o público."},
-            {"role": "user", "content": prompt}
-        ]
-    )
-
-    return resposta.choices[0].message.content.strip()
+    try:
+        resposta = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5,
+            max_tokens=500,
+        )
+        return resposta.choices[0].message["content"].strip()
+    except Exception as e:
+        return f"Erro ao acessar o agente de IA: {str(e)}"
