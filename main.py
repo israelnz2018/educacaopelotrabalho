@@ -402,7 +402,8 @@ GRAFICOS = {
 }
 
 @app.post("/analise")
-async def analisar(
+async def processar_analise(
+    request: Request,
     arquivo: UploadFile = File(None),
     ferramenta: str = Form(None),
     grafico: str = Form(None),
@@ -410,6 +411,13 @@ async def analisar(
     colunas_x: str | list[str] = Form(None)
 ):
     try:
+        # 🔍 LOG DE DEBUG: visualizar campos recebidos no Railway
+        form = await request.form()
+        print("🔎 FORM RECEBIDO:")
+        for chave, valor in form.items():
+            print(f"{chave}: {valor}")
+
+        # Função auxiliar para tratar colunas A-Z
         def interpretar_coluna(df, valor):
             valor = valor.strip()
             if len(valor) == 1 and valor.upper() in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
@@ -419,6 +427,38 @@ async def analisar(
                 else:
                     raise ValueError(f"Coluna na posição '{valor}' não existe no arquivo. Arquivo tem apenas {len(df.columns)} colunas.")
             return valor
+
+        # Lê o DataFrame
+        df = await ler_arquivo(arquivo)
+
+        # Trata coluna Y
+        coluna_y_final = interpretar_coluna(df, coluna_y) if coluna_y else None
+
+        # Trata colunas X
+        if isinstance(colunas_x, str):
+            colunas_x_list = [interpretar_coluna(df, col) for col in colunas_x.split(",") if col.strip()]
+        elif isinstance(colunas_x, list):
+            colunas_x_list = [interpretar_coluna(df, col) for col in colunas_x if col.strip()]
+        else:
+            colunas_x_list = []
+
+        analise_texto = None
+        grafico_base64 = None
+
+        if ferramenta:
+            analise_texto = realizar_analise_estatistica(df, ferramenta, "", coluna_y_final, colunas_x_list)
+
+        if grafico:
+            grafico_base64 = gerar_grafico(df, grafico, colunas_x_list, coluna_y_final)
+
+        return {
+            "analise": analise_texto,
+            "grafico_isolado_base64": grafico_base64
+        }
+
+    except Exception as e:
+        return JSONResponse(status_code=400, content={"erro": str(e)})
+
 
         # 🔄 Leitura do arquivo Excel
         if arquivo and arquivo.filename.endswith(".xlsx"):
