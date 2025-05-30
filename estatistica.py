@@ -8,7 +8,7 @@ from scipy import stats
 import base64
 import io
 
-from util.estilo import aplicar_estilo_minitab
+from estilo import aplicar_estilo_minitab
 
 def salvar_grafico():
     caminho = "grafico.png"
