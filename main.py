@@ -24,7 +24,7 @@ async def analisar(
         colunas_usadas = []
 
         if coluna_y and coluna_y.strip():
-            colunas_usadas.append(interpretar_coluna(df, coluna_y))
+            colunas_usadas.append(interpretar_coluna(df, coluna_y.strip()))
 
         colunas_x_lista = []
         if colunas_x:
