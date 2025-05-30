@@ -1,10 +1,9 @@
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-import pandas as pd
-import base64
-import os
-from util.estilo import aplicar_estilo_minitab
+
+from estilo import aplicar_estilo_minitab
 
 def salvar_grafico():
     caminho = "grafico.png"
