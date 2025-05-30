@@ -2,8 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import base64
+import os
 import io
-
 
 from estilo import aplicar_estilo_minitab
 
@@ -142,3 +143,4 @@ GRAFICOS = {
     "boxplot_multiplo": grafico_boxplot_multiplo,
     "histograma_simples": grafico_histograma_simples
 }
+
