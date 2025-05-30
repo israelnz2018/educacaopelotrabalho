@@ -1,5 +1,5 @@
-# agente.py
 import os
+import openai
 
 try:
     import openai
