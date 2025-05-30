@@ -169,14 +169,15 @@ def grafico_pareto(df, colunas):
 
 # 📊 Histograma Múltiplo com Sobreposição + Curvas de Densidade por Categoria
 def grafico_histograma_multiplo(df, colunas_x, coluna_y=None):
-    if not coluna_y:
+    # ✅ Validação robusta das entradas
+    if not coluna_y or coluna_y.strip() == "":
         raise ValueError("Você deve selecionar uma coluna Y com dados numéricos.")
     if not colunas_x or len(colunas_x) < 1:
         raise ValueError("Você deve selecionar ao menos uma coluna X com categorias para o histograma múltiplo.")
 
     coluna_categoria = colunas_x[0]
 
-    # Convertendo Y para numérico
+    # ✅ Conversão segura para valores numéricos
     y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
     y = pd.to_numeric(y, errors="coerce")
 
@@ -186,14 +187,13 @@ def grafico_histograma_multiplo(df, colunas_x, coluna_y=None):
     if df_filtrado.empty:
         raise ValueError("Não há dados válidos suficientes para gerar o gráfico.")
 
+    # ✅ Início do gráfico
     plt.figure(figsize=(10, 6))
-
     cores_fortes = ['#1f77b4', '#d62728', '#2ca02c', '#ff7f0e', '#9467bd', '#8c564b']
     cores_claras = ['#aec7e8', '#ff9896', '#98df8a', '#ffbb78', '#c5b0d5', '#c49c94']
 
     for i, categoria in enumerate(df_filtrado[coluna_categoria].unique()):
         subset = df_filtrado[df_filtrado[coluna_categoria] == categoria][coluna_y]
-
         if len(subset) < 2:
             continue
 
