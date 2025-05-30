@@ -1,0 +1,143 @@
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import pandas as pd
+import base64
+import os
+from util.estilo import aplicar_estilo_minitab
+
+def salvar_grafico():
+    caminho = "grafico.png"
+    plt.tight_layout()
+    plt.savefig(caminho)
+    plt.close()
+    with open(caminho, "rb") as f:
+        img_base64 = base64.b64encode(f.read()).decode("utf-8")
+    os.remove(caminho)
+    return img_base64
+
+def grafico_dispersao(df, colunas):
+    if len(colunas) < 2:
+        raise ValueError("Gráfico de dispersão requer exatamente duas colunas.")
+    plt.figure(figsize=(8, 6))
+    aplicar_estilo_minitab()
+    sns.scatterplot(x=df[colunas[0]], y=df[colunas[1]])
+    plt.title("Gráfico de Dispersão")
+    return salvar_grafico()
+
+def grafico_boxplot_simples(df, colunas, coluna_y=None):
+    if not coluna_y:
+        raise ValueError("Para o boxplot simples, a coluna Y (numérica) é obrigatória.")
+
+    y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
+    y = pd.to_numeric(y, errors="coerce").dropna()
+    if len(y) < 2:
+        raise ValueError("Coluna Y deve conter ao menos dois valores numéricos.")
+
+    df_box = pd.DataFrame({coluna_y: y, "grupo": "A"})
+
+    plt.figure(figsize=(6, 6))
+    aplicar_estilo_minitab()
+    sns.boxplot(data=df_box, x="grupo", y=coluna_y, color="#89CFF0", width=0.3)
+    sns.pointplot(data=df_box, x="grupo", y=coluna_y, estimator=np.mean,
+                  markers="D", color="red", scale=1.2, errwidth=0)
+    plt.xlabel("")
+    plt.ylabel(coluna_y)
+    plt.title("Boxplot Simples com Média (losango)")
+    return salvar_grafico()
+
+def grafico_pareto(df, colunas):
+    if len(colunas) != 1:
+        raise ValueError("O gráfico de Pareto requer exatamente uma coluna categórica.")
+
+    coluna = colunas[0]
+    contagem = df[coluna].value_counts().sort_values(ascending=False)
+    porcentagem = contagem / contagem.sum() * 100
+    acumulado = porcentagem.cumsum()
+
+    plt.figure(figsize=(10, 6))
+    aplicar_estilo_minitab()
+
+    ax = sns.barplot(x=contagem.index, y=contagem.values, color="#89CFF0")
+    ax.set_ylabel("Frequência")
+    ax.set_xlabel(coluna)
+    ax.set_title("Gráfico de Pareto")
+
+    ax2 = ax.twinx()
+    ax2.plot(contagem.index, acumulado.values, color="red", marker="o", linewidth=2)
+    ax2.set_ylabel("Acumulado (%)")
+    ax2.set_ylim(0, 110)
+
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right")
+
+    return salvar_grafico()
+
+def grafico_boxplot_multiplo(df, colunas, coluna_y=None):
+    if not coluna_y or not coluna_y.strip():
+        raise ValueError("Você deve selecionar uma coluna Y com valores numéricos para o boxplot múltiplo.")
+
+    coluna_y = coluna_y.strip()
+    if coluna_y.startswith("Unnamed") or coluna_y not in df.columns:
+        raise ValueError(f"A coluna Y '{coluna_y}' não tem título válido ou não foi encontrada.")
+
+    y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
+    y = pd.to_numeric(y, errors="coerce")
+    if y.dropna().shape[0] < 2:
+        raise ValueError("A coluna Y deve conter ao menos dois valores numéricos válidos.")
+
+    colunas = [c.strip() for c in colunas if c.strip() and c.strip() != coluna_y and not c.strip().startswith("Unnamed")]
+    if not colunas:
+        raise ValueError("Nenhuma coluna X válida foi selecionada para o agrupamento.")
+
+    x_col = colunas[0]
+    if x_col not in df.columns:
+        raise ValueError(f"A coluna X '{x_col}' não foi encontrada no arquivo.")
+
+    grupo = df[x_col].astype(str)
+    df_plot = pd.DataFrame({coluna_y: y, x_col: grupo}).dropna()
+
+    if df_plot.empty:
+        raise ValueError("Os dados da coluna Y e do grupo X selecionado não têm valores válidos simultaneamente.")
+
+    plt.figure(figsize=(10, 6))
+    aplicar_estilo_minitab()
+
+    sns.boxplot(data=df_plot, x=x_col, y=coluna_y, color="#89CFF0")
+    sns.pointplot(data=df_plot, x=x_col, y=coluna_y, estimator=np.mean,
+                  markers="D", color="red", scale=1.1, errwidth=0)
+
+    plt.title(f"Boxplot Múltiplo por '{x_col}'")
+    plt.xlabel(x_col)
+    plt.ylabel(coluna_y)
+    plt.xticks(rotation=45)
+
+    return salvar_grafico()
+
+def grafico_histograma_simples(df, colunas, coluna_y=None):
+    if not colunas or len(colunas) == 0:
+        raise ValueError("Você deve selecionar uma coluna Y com dados numéricos para o histograma simples.")
+
+    coluna_y = colunas[0]
+
+    y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
+    y = pd.to_numeric(y, errors="coerce").dropna()
+
+    if len(y) < 2:
+        raise ValueError("Coluna Y deve conter ao menos dois valores numéricos.")
+
+    plt.figure(figsize=(8, 6))
+    aplicar_estilo_minitab()
+    sns.histplot(y, kde=True, color="#89CFF0", edgecolor="black")
+    plt.xlabel(coluna_y)
+    plt.ylabel("Frequência")
+    plt.title("Histograma Simples com Curva de Densidade")
+
+    return salvar_grafico()
+
+GRAFICOS = {
+    "scatter": grafico_dispersao,
+    "boxplot_simples": grafico_boxplot_simples,
+    "grafico_pareto": grafico_pareto,
+    "boxplot_multiplo": grafico_boxplot_multiplo,
+    "histograma_simples": grafico_histograma_simples
+}
