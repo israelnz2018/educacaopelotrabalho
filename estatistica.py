@@ -5,6 +5,8 @@ import seaborn as sns
 import statsmodels.api as sm
 from scipy import stats
 import io
+import base64
+
 
 
 from estilo import aplicar_estilo_minitab
