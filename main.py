@@ -167,6 +167,51 @@ def grafico_pareto(df, colunas):
 
     return salvar_grafico()
 
+# 📊 Histograma Múltiplo com Sobreposição + Curvas de Densidade por Categoria
+def grafico_histograma_multiplo(df, colunas_x, coluna_y=None):
+    if not coluna_y:
+        raise ValueError("Você deve selecionar uma coluna Y com dados numéricos.")
+    if not colunas_x or len(colunas_x) < 1:
+        raise ValueError("Você deve selecionar ao menos uma coluna X com categorias para o histograma múltiplo.")
+
+    coluna_categoria = colunas_x[0]
+
+    # Convertendo Y para numérico
+    y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
+    y = pd.to_numeric(y, errors="coerce")
+
+    categorias = df[coluna_categoria].astype(str)
+    df_filtrado = pd.DataFrame({coluna_categoria: categorias, coluna_y: y}).dropna()
+
+    if df_filtrado.empty:
+        raise ValueError("Não há dados válidos suficientes para gerar o gráfico.")
+
+    plt.figure(figsize=(10, 6))
+
+    cores_fortes = ['#1f77b4', '#d62728', '#2ca02c', '#ff7f0e', '#9467bd', '#8c564b']
+    cores_claras = ['#aec7e8', '#ff9896', '#98df8a', '#ffbb78', '#c5b0d5', '#c49c94']
+
+    for i, categoria in enumerate(df_filtrado[coluna_categoria].unique()):
+        subset = df_filtrado[df_filtrado[coluna_categoria] == categoria][coluna_y]
+
+        if len(subset) < 2:
+            continue
+
+        cor_hist = cores_fortes[i % len(cores_fortes)]
+        cor_kde = cores_claras[i % len(cores_claras)]
+
+        sns.histplot(subset, kde=False, color=cor_hist, label=f'{categoria} (Hist)', stat="density", element="step", edgecolor="black", alpha=0.5)
+        sns.kdeplot(subset, color=cor_kde, label=f'{categoria} (Dens)', linewidth=2)
+
+    plt.xlabel(coluna_y)
+    plt.ylabel("Densidade")
+    plt.title("Histograma Múltiplo com Curvas de Densidade por Categoria")
+    plt.legend()
+    plt.tight_layout()
+
+    return salvar_grafico()
+
+
 def grafico_boxplot_multiplo(df, colunas, coluna_y=None):
     if not coluna_y or not coluna_y.strip():
         raise ValueError("Você deve selecionar uma coluna Y com valores numéricos para o boxplot múltiplo.")
@@ -337,7 +382,8 @@ GRAFICOS = {
     "boxplot_simples": grafico_boxplot_simples,
     "grafico_pareto": grafico_pareto,
     "boxplot_multiplo": grafico_boxplot_multiplo,
-    "histograma_simples": grafico_histograma_simples
+    "histograma_simples": grafico_histograma_simples,
+    "histograma_multiplo": grafico_histograma_multiplo
 }
 
 @app.post("/analise")
