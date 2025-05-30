@@ -1,5 +1,3 @@
-# agente.py
-
 import os
 
 try:
@@ -8,7 +6,6 @@ except ImportError:
     openai = None
 
 def interpretar_analise(analise_texto):
-    # ✅ Verifica se a chave está configurada e se o módulo openai está disponível
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
     if not OPENAI_API_KEY or not openai:
         return "O agente de IA ainda não está ativado. Configure a chave OPENAI_API_KEY para usar esta função."
@@ -33,3 +30,4 @@ Evite repetir números. Foque no significado e nas implicações dos resultados.
         return resposta.choices[0].message["content"].strip()
     except Exception as e:
         return f"Erro ao acessar o agente de IA: {str(e)}"
+
