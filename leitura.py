@@ -1,5 +1,6 @@
 import pandas as pd
 import io
+from fastapi.responses import JSONResponse
 
 async def ler_arquivo(arquivo):
     if arquivo and arquivo.filename.endswith(".xlsx"):
