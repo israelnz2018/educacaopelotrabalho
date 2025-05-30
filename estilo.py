@@ -14,7 +14,7 @@ def aplicar_estilo_minitab():
         "ytick.labelsize": 12,       # Números no eixo Y
         "legend.fontsize": 12,       # Tamanho do texto da legenda
         "font.size": 13,             # Tamanho global da fonte
-        "font.family": "Arial",
+        "font.family": "sans-serif",
         "grid.linestyle": "--",
         "grid.color": "#CCCCCC",
         "grid.alpha": 0.7,
