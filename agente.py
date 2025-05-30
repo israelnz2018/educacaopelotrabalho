@@ -1,12 +1,13 @@
+# agente.py
+
 import os
-import openai
 
 try:
     import openai
 except ImportError:
     openai = None
 
-def interpretar_resultado(analise_texto):
+def interpretar_analise(analise_texto):
     # ✅ Verifica se a chave está configurada e se o módulo openai está disponível
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
     if not OPENAI_API_KEY or not openai:
