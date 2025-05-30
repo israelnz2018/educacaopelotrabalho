@@ -4,6 +4,8 @@ import numpy as np
 import seaborn as sns
 import statsmodels.api as sm
 from scipy import stats
+import io
+
 
 from estilo import aplicar_estilo_minitab
 
