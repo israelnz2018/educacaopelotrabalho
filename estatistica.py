@@ -1,12 +1,9 @@
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 import statsmodels.api as sm
-from sklearn.metrics import roc_curve, auc
 from scipy import stats
-import base64
-import io
 
 from estilo import aplicar_estilo_minitab
 
