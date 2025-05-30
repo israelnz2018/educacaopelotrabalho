@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, Form, Request
+from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import JSONResponse
 import pandas as pd
 import io
@@ -10,7 +10,6 @@ import statsmodels.api as sm
 from sklearn.metrics import roc_curve, auc
 import numpy as np
 from scipy import stats
-
 
 app = FastAPI()
 
@@ -167,66 +166,6 @@ def grafico_pareto(df, colunas):
     ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right")
 
     return salvar_grafico()
-
-# 📊 Histograma Múltiplo com Sobreposição + Curvas de Densidade por Categoria
-def grafico_histograma_multiplo(df, colunas_x, coluna_y=None):
-    if not coluna_y or coluna_y.strip() == "":
-        raise ValueError("Você deve selecionar uma coluna Y com dados numéricos.")
-    if not colunas_x or len(colunas_x) < 1:
-        raise ValueError("Você deve selecionar ao menos uma coluna X com categorias para o histograma múltiplo.")
-
-    coluna_categoria = colunas_x[0]
-
-    # Convertendo Y para numérico
-    y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
-    y = pd.to_numeric(y, errors="coerce")
-
-    # Convertendo categorias para string
-    categorias = df[coluna_categoria].astype(str)
-    df_filtrado = pd.DataFrame({coluna_categoria: categorias, coluna_y: y}).dropna()
-
-    if df_filtrado.empty:
-        raise ValueError("Não há dados válidos suficientes para gerar o gráfico.")
-
-    plt.figure(figsize=(10, 6))
-
-    cores_fortes = ['#1f77b4', '#d62728', '#2ca02c', '#ff7f0e', '#9467bd', '#8c564b']
-    cores_claras = ['#aec7e8', '#ff9896', '#98df8a', '#ffbb78', '#c5b0d5', '#c49c94']
-
-    for i, categoria in enumerate(df_filtrado[coluna_categoria].unique()):
-        subset = df_filtrado[df_filtrado[coluna_categoria] == categoria][coluna_y]
-
-        if len(subset) < 2:
-            continue
-
-        cor_hist = cores_fortes[i % len(cores_fortes)]
-        cor_kde = cores_claras[i % len(cores_claras)]
-
-        sns.histplot(
-            subset,
-            kde=False,
-            color=cor_hist,
-            label=f'{categoria} (Hist)',
-            stat="density",
-            element="step",
-            edgecolor="black",
-            alpha=0.5
-        )
-        sns.kdeplot(
-            subset,
-            color=cor_kde,
-            label=f'{categoria} (Dens)',
-            linewidth=2
-        )
-
-    plt.xlabel(coluna_y)
-    plt.ylabel("Densidade")
-    plt.title("Histograma Múltiplo com Curvas de Densidade por Categoria")
-    plt.legend()
-    plt.tight_layout()
-
-    return salvar_grafico()
-
 
 def grafico_boxplot_multiplo(df, colunas, coluna_y=None):
     if not coluna_y or not coluna_y.strip():
@@ -398,13 +337,11 @@ GRAFICOS = {
     "boxplot_simples": grafico_boxplot_simples,
     "grafico_pareto": grafico_pareto,
     "boxplot_multiplo": grafico_boxplot_multiplo,
-    "histograma_simples": grafico_histograma_simples,
-    "histograma_multiplo": grafico_histograma_multiplo
+    "histograma_simples": grafico_histograma_simples
 }
 
 @app.post("/analise")
-async def processar_analise(
-    request: Request,
+async def analisar(
     arquivo: UploadFile = File(None),
     ferramenta: str = Form(None),
     grafico: str = Form(None),
@@ -412,13 +349,6 @@ async def processar_analise(
     colunas_x: str | list[str] = Form(None)
 ):
     try:
-        # 🔍 LOG DE DEBUG: visualizar campos recebidos no Railway
-        form = await request.form()
-        print("🔎 FORM RECEBIDO:")
-        for chave, valor in form.items():
-            print(f"{chave}: {valor}")
-
-        # Função auxiliar para tratar colunas A-Z
         def interpretar_coluna(df, valor):
             valor = valor.strip()
             if len(valor) == 1 and valor.upper() in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
@@ -429,35 +359,71 @@ async def processar_analise(
                     raise ValueError(f"Coluna na posição '{valor}' não existe no arquivo. Arquivo tem apenas {len(df.columns)} colunas.")
             return valor
 
-        # Lê o DataFrame
-        df = await ler_arquivo(arquivo)
-
-        # Trata coluna Y
-        coluna_y_final = interpretar_coluna(df, coluna_y) if coluna_y else None
-
-        # Trata colunas X
-        if isinstance(colunas_x, str):
-            colunas_x_list = [interpretar_coluna(df, col) for col in colunas_x.split(",") if col.strip()]
-        elif isinstance(colunas_x, list):
-            colunas_x_list = [interpretar_coluna(df, col) for col in colunas_x if col.strip()]
+        # 🔄 Leitura do arquivo Excel
+        if arquivo and arquivo.filename.endswith(".xlsx"):
+            file_bytes = await arquivo.read()
+            df = pd.read_excel(io.BytesIO(file_bytes), engine="openpyxl")
         else:
-            colunas_x_list = []
+            return JSONResponse(content={"erro": "Envie um arquivo Excel (.xlsx) válido."}, status_code=400)
 
-        analise_texto = None
-        grafico_base64 = None
+        df.columns = df.columns.str.strip()
+        colunas_usadas = []
 
-        if ferramenta:
-            analise_texto = realizar_analise_estatistica(df, ferramenta, "", coluna_y_final, colunas_x_list)
+        if coluna_y and coluna_y.strip():
+            colunas_usadas.append(interpretar_coluna(df, coluna_y))
 
-        if grafico:
-            grafico_base64 = gerar_grafico(df, grafico, colunas_x_list, coluna_y_final)
+
+        colunas_x_lista = []
+        if colunas_x:
+            if isinstance(colunas_x, str):
+                colunas_x_lista = [x.strip() for x in colunas_x.split(",") if x.strip()]
+            elif isinstance(colunas_x, list):
+                colunas_x_lista = [x.strip() for x in colunas_x if isinstance(x, str) and x.strip()]
+
+        for c in colunas_x_lista:
+            colunas_usadas.append(interpretar_coluna(df, c))
+
+        if not colunas_usadas:
+            return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
+
+        for col in colunas_usadas:
+            if col not in df.columns:
+                return JSONResponse(content={"erro": f"Coluna '{col}' não encontrada no arquivo."}, status_code=400)
+
+        resultado_texto = None
+        imagem_analise_base64 = None
+        imagem_grafico_isolado_base64 = None
+
+        # ✅ Caso 1: análise estatística (com gráfico acoplado, se houver)
+        if ferramenta and ferramenta.strip():
+            funcao = ANALISES.get(ferramenta.strip())
+            if not funcao:
+                return JSONResponse(content={"erro": "Análise estatística desconhecida."}, status_code=400)
+            resultado_texto, imagem_analise_base64 = funcao(df, colunas_usadas)
+
+        # ✅ Caso 2: gráfico isolado (com ou sem análise)
+        if grafico and grafico.strip():
+            funcao = GRAFICOS.get(grafico.strip())
+            if not funcao:
+                return JSONResponse(content={"erro": "Gráfico desconhecido."}, status_code=400)
+            # ⛑️ Ajuste: aplica coluna_y para qualquer gráfico do tipo boxplot
+            if grafico.strip().startswith("boxplot"):
+                imagem_grafico_isolado_base64 = funcao(df, colunas_usadas, coluna_y=interpretar_coluna(df, coluna_y))
+            else:
+                imagem_grafico_isolado_base64 = funcao(df, colunas_usadas)
+
+        if not ferramenta and not grafico:
+            return JSONResponse(content={"erro": "Nenhuma ferramenta selecionada."}, status_code=400)
 
         return {
-            "analise": analise_texto,
-            "grafico_isolado_base64": grafico_base64
+            "analise": resultado_texto or "",
+            "grafico_base64": imagem_analise_base64,
+            "grafico_isolado_base64": imagem_grafico_isolado_base64,
+            "colunas_utilizadas": colunas_usadas
         }
 
     except ValueError as e:
         return JSONResponse(content={"erro": str(e)}, status_code=400)
     except Exception as e:
         return JSONResponse(content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)}, status_code=500)
+
