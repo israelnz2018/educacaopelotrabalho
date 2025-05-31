@@ -166,7 +166,7 @@ def grafico_histograma_multiplo(df, colunas, coluna_y=None):
 
     for i, (nome_grupo, dados_grupo) in enumerate(df_plot.groupby(coluna_x)):
         sns.histplot(
-            dados_grupo[coluna_y],
+            x=dados_grupo[coluna_y],
             kde=True,
             stat="density",
             element="step",
@@ -177,7 +177,7 @@ def grafico_histograma_multiplo(df, colunas, coluna_y=None):
             edgecolor="black"
         )
         sns.kdeplot(
-            dados_grupo[coluna_y],
+            x=dados_grupo[coluna_y],
             color=cores[i],
             linewidth=2,
             alpha=0.9
@@ -188,6 +188,7 @@ def grafico_histograma_multiplo(df, colunas, coluna_y=None):
     plt.ylabel("Densidade")
     plt.legend(title=coluna_x)
     return salvar_grafico()
+
 
 GRAFICOS = {
     "scatter": grafico_dispersao,
