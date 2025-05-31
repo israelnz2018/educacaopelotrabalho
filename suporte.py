@@ -1,3 +1,5 @@
+import os
+
 def interpretar_coluna(df, nome_coluna):
     """
     Interpreta a coluna informada (como 'A', 'B', 'C') e retorna o nome real da coluna no DataFrame.
