@@ -153,7 +153,16 @@ Y = {equacao}
 
     return texto.strip(), imagem
 
-def analise_descritiva(df, coluna_y, colunas_x=None):
+def analise_descritiva(df, colunas):
+    if isinstance(colunas, list) and len(colunas) == 1:
+        coluna_y = colunas[0]
+    else:
+        return {
+            "analise": "❌ A análise descritiva requer exatamente uma coluna Y.",
+            "graficos": [],
+            "colunas_utilizadas": []
+        }
+
     if coluna_y not in df.columns:
         return {
             "analise": "❌ A coluna selecionada para análise descritiva não foi encontrada.",
@@ -213,6 +222,7 @@ def analise_descritiva(df, coluna_y, colunas_x=None):
         "graficos": [imagem_base64],
         "colunas_utilizadas": [coluna_y]
     }
+
 
 
 ANALISES = {
