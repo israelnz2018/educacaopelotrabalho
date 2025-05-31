@@ -12,6 +12,7 @@ from agente import interpretar_analise  # ✅ Agente ativado
 
 app = FastAPI()
 
+
 @app.post("/analise")
 async def analisar(
     request: Request,
@@ -39,8 +40,9 @@ async def analisar(
             elif isinstance(colunas_x, list):
                 colunas_x_lista = [x.strip() for x in colunas_x if isinstance(x, str) and x.strip()]
 
-            colunas_convertidas = [interpretar_coluna(df, letra) for letra in colunas_x_lista]
-            colunas_usadas += colunas_convertidas
+            for letra in colunas_x_lista:
+                nome_coluna_x = interpretar_coluna(df, letra)
+                colunas_usadas.append(nome_coluna_x)
 
         if not colunas_usadas:
             return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
@@ -53,6 +55,7 @@ async def analisar(
         imagem_analise_base64 = None
         imagem_grafico_isolado_base64 = None
         explicacao_ia = None
+
 
         # ✅ Caso 1: análise estatística
         if ferramenta and ferramenta.strip():
