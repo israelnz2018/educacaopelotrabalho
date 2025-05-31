@@ -37,14 +37,12 @@ async def analisar(
             if isinstance(colunas_x, str):
                 colunas_x_lista = [x.strip() for x in colunas_x.split(",") if x.strip()]
             elif isinstance(colunas_x, list):
-                colunas_x_lista = [x.strip() for x in colunas_x if isinstance(x, str) and x.strip()]
+                for item in colunas_x:
+                    colunas_x_lista.extend([x.strip() for x in item.split(",") if x.strip()])
 
             for letra in colunas_x_lista:
                 nome_coluna = interpretar_coluna(df, letra)
-                if isinstance(nome_coluna, list):
-                    colunas_usadas.extend(nome_coluna)
-                else:
-                    colunas_usadas.append(nome_coluna)
+                colunas_usadas.append(nome_coluna)
 
         if not colunas_usadas:
             return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
@@ -72,18 +70,11 @@ async def analisar(
             if not funcao:
                 return JSONResponse(content={"erro": "Gráfico desconhecido."}, status_code=400)
 
-            if grafico.strip() == "histograma_multiplo":
-                imagem_grafico_isolado_base64 = funcao(
-                    df,
-                    colunas_usadas,
-                    coluna_y=nome_coluna_y
-                )
-            else:
-                imagem_grafico_isolado_base64 = funcao(
-                    df,
-                    colunas_usadas,
-                    coluna_y=nome_coluna_y
-                )
+            imagem_grafico_isolado_base64 = funcao(
+                df,
+                colunas_usadas,
+                coluna_y=nome_coluna_y
+            )
 
         if not ferramenta and not grafico:
             return JSONResponse(content={"erro": "Nenhuma ferramenta selecionada."}, status_code=400)
@@ -115,5 +106,6 @@ async def analisar(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
