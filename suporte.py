@@ -1,29 +1,25 @@
 def interpretar_coluna(df, nome_coluna):
     """
-    Interpreta a(s) coluna(s) informada(s) como letras (ex: 'A', 'B', 'C') e retorna o(s) nome(s) real(is) da coluna no DataFrame.
-    Suporta letras únicas, listas de letras e strings separadas por vírgula.
+    Interpreta a coluna informada:
+    - Se for uma letra (ex: 'A'), retorna o nome correspondente da coluna no DataFrame.
+    - Se for o nome real da coluna (ex: 'Eficiencia (y)'), retorna diretamente se existir.
     """
-    try:
-        if isinstance(nome_coluna, list):
-            letras = nome_coluna
-        elif isinstance(nome_coluna, str):
-            letras = [x.strip().upper() for x in nome_coluna.split(",") if x.strip()]
+    nome_coluna = nome_coluna.strip()
+
+    # Caso seja letra (ex: 'A', 'B'...)
+    if len(nome_coluna) == 1 and nome_coluna.upper().isalpha():
+        index = ord(nome_coluna.upper()) - ord('A')
+        if 0 <= index < len(df.columns):
+            return df.columns[index]
         else:
-            raise ValueError
+            raise ValueError(f"Letra '{nome_coluna}' está fora do intervalo de colunas.")
 
-        nomes_reais = []
-        for letra in letras:
-            if len(letra) != 1 or not letra.isalpha():
-                raise ValueError(f"Coluna '{letra}' é inválida.")
-            index = ord(letra) - ord('A')
-            if index < 0 or index >= len(df.columns):
-                raise ValueError(f"Coluna '{letra}' está fora do intervalo.")
-            nomes_reais.append(df.columns[index])
+    # Caso seja nome real da coluna
+    if nome_coluna in df.columns:
+        return nome_coluna
 
-        return nomes_reais if len(nomes_reais) > 1 else nomes_reais[0]
+    raise ValueError(f"Coluna '{nome_coluna}' é inválida.")
 
-    except Exception as e:
-        raise ValueError(f"Coluna '{nome_coluna}' é inválida.")
 
 
 
