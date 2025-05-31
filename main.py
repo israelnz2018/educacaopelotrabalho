@@ -35,8 +35,8 @@ async def analisar(
             elif isinstance(colunas_x, list):
                 colunas_x_lista = [x.strip() for x in colunas_x if isinstance(x, str) and x.strip()]
 
-        for c in colunas_x_lista:
-            colunas_usadas.append(interpretar_coluna(df, c))
+        # ⬇️ Agora adiciona os nomes das colunas diretamente, sem interpretar como letras
+        colunas_usadas += colunas_x_lista
 
         if not colunas_usadas:
             return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
@@ -49,6 +49,7 @@ async def analisar(
         imagem_analise_base64 = None
         imagem_grafico_isolado_base64 = None
         explicacao_ia = None
+
 
         # ✅ Caso 1: análise estatística
         if ferramenta and ferramenta.strip():
