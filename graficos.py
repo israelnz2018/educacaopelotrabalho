@@ -136,11 +136,65 @@ def grafico_histograma_simples(df, colunas, coluna_y=None):
 
     return salvar_grafico()
 
+def grafico_histograma_multiplo(df, colunas, coluna_y=None):
+    if not coluna_y or not coluna_y.strip():
+        raise ValueError("Você deve selecionar uma coluna Y com dados numéricos.")
+    if not colunas or len(colunas) == 0:
+        raise ValueError("Você deve selecionar uma coluna X com os grupos.")
+
+    coluna_y = coluna_y.strip()
+    coluna_x = colunas[0].strip()
+
+    if coluna_y not in df.columns:
+        raise ValueError(f"A coluna Y '{coluna_y}' não foi encontrada no arquivo.")
+    if coluna_x not in df.columns:
+        raise ValueError(f"A coluna X '{coluna_x}' não foi encontrada no arquivo.")
+
+    y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
+    y = pd.to_numeric(y, errors="coerce")
+    grupo = df[coluna_x].astype(str)
+
+    df_plot = pd.DataFrame({coluna_y: y, coluna_x: grupo}).dropna()
+
+    if df_plot.empty:
+        raise ValueError("Os dados das colunas selecionadas não têm valores válidos.")
+
+    plt.figure(figsize=(10, 6))
+    aplicar_estilo_minitab()
+
+    cores = sns.color_palette("tab10", n_colors=df_plot[coluna_x].nunique())
+
+    for i, (nome_grupo, dados_grupo) in enumerate(df_plot.groupby(coluna_x)):
+        sns.histplot(
+            dados_grupo[coluna_y],
+            kde=True,
+            stat="density",
+            element="step",
+            fill=True,
+            label=str(nome_grupo),
+            color=cores[i],
+            alpha=0.4,
+            edgecolor="black"
+        )
+        sns.kdeplot(
+            dados_grupo[coluna_y],
+            color=cores[i],
+            linewidth=2,
+            alpha=0.9
+        )
+
+    plt.title(f"Histograma Múltiplo de '{coluna_y}' por '{coluna_x}'")
+    plt.xlabel(coluna_y)
+    plt.ylabel("Densidade")
+    plt.legend(title=coluna_x)
+    return salvar_grafico()
+
 GRAFICOS = {
     "scatter": grafico_dispersao,
     "boxplot_simples": grafico_boxplot_simples,
     "grafico_pareto": grafico_pareto,
     "boxplot_multiplo": grafico_boxplot_multiplo,
-    "histograma_simples": grafico_histograma_simples
+    "histograma_simples": grafico_histograma_simples,
+    "histograma_multiplo": grafico_histograma_multiplo,
 }
 
