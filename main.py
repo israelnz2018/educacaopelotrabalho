@@ -1,7 +1,6 @@
 from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import JSONResponse
 import pandas as pd
-import os
 import traceback
 
 from leitura import ler_arquivo
@@ -82,7 +81,7 @@ async def analisar(
         return {
             "analise": resultado_texto or "",
             "explicacao_ia": explicacao_ia,
-            "grafico_base64": imagem_analise_base64,
+            "grafico_base64": imagem_analise_base64 if isinstance(imagem_analise_base64, str) else (imagem_analise_base64 or []),
             "grafico_isolado_base64": imagem_grafico_isolado_base64,
             "colunas_utilizadas": colunas_usadas
         }
@@ -106,6 +105,7 @@ async def analisar(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
