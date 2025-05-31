@@ -12,6 +12,8 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.stats.stattools import durbin_watson
 from scipy.stats import shapiro
 from sklearn.metrics import roc_curve, auc
+from scipy.stats import shapiro, anderson, kstest, norm
+
 
 from estilo import aplicar_estilo_minitab
 from suporte import interpretar_coluna
@@ -210,8 +212,66 @@ def analise_descritiva(df, colunas_usadas):
 
     return resumo, imagem_base64
 
+def teste_normalidade(df, colunas_usadas):
+    if not colunas_usadas:
+        return "❌ Nenhuma coluna foi selecionada.", None
+
+    coluna = colunas_usadas[0]
+    serie = df[coluna].dropna()
+
+    if serie.empty:
+        return "❌ A coluna selecionada não contém dados válidos.", None
+
+    resultados = []
+    dicas = []
+
+    # Shapiro-Wilk
+    stat_sw, p_sw = shapiro(serie)
+    conclusao_sw = "✅ Dados normais (p > 0.05)" if p_sw > 0.05 else "❌ Dados não normais (p ≤ 0.05)"
+    resultados.append(f"🔹 Shapiro-Wilk: Estatística = {stat_sw:.4f}, p = {p_sw:.4f} → {conclusao_sw}")
+
+    # Anderson-Darling
+    ad = anderson(serie)
+    lim_ad = ad.critical_values[2]  # nível de significância de 5%
+    conclusao_ad = "✅ Dados normais" if ad.statistic < lim_ad else "❌ Dados não normais"
+    resultados.append(f"🔹 Anderson-Darling: Estatística = {ad.statistic:.4f}, Limite Crítico (5%) = {lim_ad:.4f} → {conclusao_ad}")
+
+    # Kolmogorov-Smirnov com comparação à normal padrão
+    serie_padronizada = (serie - serie.mean()) / serie.std()
+    stat_ks, p_ks = kstest(serie_padronizada, 'norm')
+    conclusao_ks = "✅ Dados normais (p > 0.05)" if p_ks > 0.05 else "❌ Dados não normais (p ≤ 0.05)"
+    resultados.append(f"🔹 Kolmogorov-Smirnov: Estatística = {stat_ks:.4f}, p = {p_ks:.4f} → {conclusao_ks}")
+
+    # Se os três testes forem negativos, mostrar recomendações
+    if all("❌" in linha for linha in resultados):
+        # Outliers
+        q1 = serie.quantile(0.25)
+        q3 = serie.quantile(0.75)
+        iqr = q3 - q1
+        limites = (q1 - 1.5 * iqr, q3 + 1.5 * iqr)
+        outliers = serie[(serie < limites[0]) | (serie > limites[1])]
+        if not outliers.empty:
+            dicas.append("🔎 Foram identificados possíveis outliers. Recomendamos investigá-los e, se apropriado, removê-los antes de repetir o teste.")
+
+        # Tamanho da amostra
+        if len(serie) <= 30:
+            dicas.append("📉 A amostra contém 30 dados ou menos. Sempre que possível, colete pelo menos 50 dados para garantir maior confiabilidade.")
+
+        # Estabilidade do processo
+        dicas.append("⚙️ Verifique se o processo estava estável no momento da coleta. Mudanças no ambiente, operador ou equipamento podem afetar a distribuição.")
+
+    texto = f"""📊 **Teste de Normalidade - Coluna '{coluna}'**  
+{chr(10).join(resultados)}
+
+{chr(10).join(dicas)}""" if dicas else f"""📊 **Teste de Normalidade - Coluna '{coluna}'**  
+{chr(10).join(resultados)}"""
+
+    return texto, None
+
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
     "regressao_multipla": analise_regressao_linear_multipla,
-    "analise_descritiva": analise_descritiva
+    "analise_descritiva": analise_descritiva,
+    "teste_normalidade": teste_normalidade
+
 }
