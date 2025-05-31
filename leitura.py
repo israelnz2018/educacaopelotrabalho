@@ -1,5 +1,7 @@
 import pandas as pd
 import io
+import os
+
 from fastapi.responses import JSONResponse
 
 async def ler_arquivo(arquivo):
