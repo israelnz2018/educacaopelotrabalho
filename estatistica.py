@@ -7,6 +7,7 @@ from scipy import stats
 import io
 import base64
 import os
+from io import BytesIO
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.stats.stattools import durbin_watson
 from scipy.stats import shapiro
