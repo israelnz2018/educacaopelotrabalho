@@ -72,11 +72,22 @@ def analise_regressao_linear_multipla(df, colunas):
     y_col = colunas[-1]
     x_cols = colunas[:-1]
 
+    # 🔍 Conversão segura para numérico
     X = df[x_cols].apply(pd.to_numeric, errors='coerce')
     Y = pd.to_numeric(df[y_col], errors='coerce')
-    X = sm.add_constant(X)
-    modelo = sm.OLS(Y, X, missing='drop').fit()
 
+    # 🧹 Remove inf, -inf e NaN antes de montar o modelo
+    dados = pd.concat([X, Y], axis=1)
+    dados.replace([float("inf"), float("-inf")], pd.NA, inplace=True)
+    dados.dropna(inplace=True)
+
+    X = dados[x_cols]
+    Y = dados[y_col]
+    X = sm.add_constant(X)
+
+    modelo = sm.OLS(Y, X).fit()
+
+    # 🧮 Equação do modelo
     eq_terms = [f"{coef:.2f}*{var}" for var, coef in modelo.params.items() if var != 'const']
     equacao = f"{modelo.params['const']:.2f} + " + " + ".join(eq_terms)
 
@@ -85,20 +96,20 @@ def analise_regressao_linear_multipla(df, colunas):
     erro_padrao = modelo.mse_resid**0.5
     p_valor_modelo = modelo.f_pvalue
 
-    # VIF
+    # 🔁 VIF
     vif_data = pd.DataFrame()
     vif_data["Variável"] = X.columns
     vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
 
-    # Resíduos
+    # 📉 Resíduos
     residuos = modelo.resid
     residuos_padronizados = (residuos - residuos.mean()) / residuos.std()
     outliers = sum(abs(residuos_padronizados) > 3)
 
-    # Normalidade
+    # 📏 Teste de normalidade
     stat, p_shapiro = shapiro(residuos)
 
-    # Durbin-Watson
+    # 🧪 Durbin-Watson
     dw = durbin_watson(residuos)
 
     texto = f"""📊 Regressão Linear Múltipla
@@ -123,16 +134,19 @@ Y = {equacao}
 
     imagens = []
 
+    # 📊 Histograma dos resíduos
     plt.figure(figsize=(6, 4))
     aplicar_estilo_minitab()
     sns.histplot(residuos, kde=True, color="steelblue", edgecolor="black")
     plt.title("Histograma dos Resíduos")
     imagens.append(salvar_grafico())
 
+    # 📈 QQ-Plot
     sm.qqplot(residuos, line='45', fit=True)
     plt.title("QQ-Plot dos Resíduos")
     imagens.append(salvar_grafico())
 
+    # 📉 Resíduos vs Ajustados
     plt.figure(figsize=(6, 4))
     aplicar_estilo_minitab()
     plt.scatter(modelo.fittedvalues, residuos, edgecolor="black", color="darkorange", alpha=0.6)
@@ -143,6 +157,7 @@ Y = {equacao}
     imagens.append(salvar_grafico())
 
     return texto.strip(), imagens
+
 
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
