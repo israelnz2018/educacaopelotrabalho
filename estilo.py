@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+import os
+
 
 def aplicar_estilo_minitab():
     plt.style.use("default")
