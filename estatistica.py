@@ -65,6 +65,18 @@ def analise_regressao_linear_simples(df, colunas):
 
     return resumo, salvar_grafico()
 
+from scipy.stats import anderson
+from statsmodels.stats.stattools import durbin_watson
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
+from suporte import interpretar_coluna
+from util import aplicar_estilo_minitab, salvar_grafico
+
+
 def analise_regressao_linear_multipla(df, colunas):
     colunas = [interpretar_coluna(df, c) for c in colunas]
     aplicar_estilo_minitab()
@@ -72,22 +84,11 @@ def analise_regressao_linear_multipla(df, colunas):
     y_col = colunas[-1]
     x_cols = colunas[:-1]
 
-    # 🔍 Conversão segura para numérico
     X = df[x_cols].apply(pd.to_numeric, errors='coerce')
     Y = pd.to_numeric(df[y_col], errors='coerce')
-
-    # 🧹 Remove inf, -inf e NaN antes de montar o modelo
-    dados = pd.concat([X, Y], axis=1)
-    dados.replace([float("inf"), float("-inf")], pd.NA, inplace=True)
-    dados.dropna(inplace=True)
-
-    X = dados[x_cols]
-    Y = dados[y_col]
     X = sm.add_constant(X)
+    modelo = sm.OLS(Y, X, missing='drop').fit()
 
-    modelo = sm.OLS(Y, X).fit()
-
-    # 🧮 Equação do modelo
     eq_terms = [f"{coef:.2f}*{var}" for var, coef in modelo.params.items() if var != 'const']
     equacao = f"{modelo.params['const']:.2f} + " + " + ".join(eq_terms)
 
@@ -96,20 +97,22 @@ def analise_regressao_linear_multipla(df, colunas):
     erro_padrao = modelo.mse_resid**0.5
     p_valor_modelo = modelo.f_pvalue
 
-    # 🔁 VIF
+    # VIF
     vif_data = pd.DataFrame()
     vif_data["Variável"] = X.columns
     vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
 
-    # 📉 Resíduos
+    # Resíduos
     residuos = modelo.resid
     residuos_padronizados = (residuos - residuos.mean()) / residuos.std()
     outliers = sum(abs(residuos_padronizados) > 3)
 
-    # 📏 Teste de normalidade
-    stat, p_shapiro = shapiro(residuos)
+    # Normalidade (Anderson-Darling)
+    stat_ad, crit_vals, sig_levels = anderson(residuos, dist='norm')
+    limiar_5 = crit_vals[sig_levels.tolist().index(5.0)]
+    passou_normalidade = stat_ad < limiar_5
 
-    # 🧪 Durbin-Watson
+    # Durbin-Watson
     dw = durbin_watson(residuos)
 
     texto = f"""📊 Regressão Linear Múltipla
@@ -127,26 +130,23 @@ Y = {equacao}
     "\n".join([f"  - {row['Variável']}: {row['VIF']:.2f}" for _, row in vif_data.iterrows() if row['Variável'] != 'const']) + f"""
 
 🔹 Resíduos:
-- Teste de Shapiro-Wilk (normalidade): p = {p_shapiro:.4f} {'✅' if p_shapiro > 0.05 else '❌'}
+- Teste de Anderson-Darling (normalidade, 5%): {'✅' if passou_normalidade else '❌'} (estatística = {stat_ad:.4f}, limite crítico = {limiar_5:.4f})
 - Estatística de Durbin-Watson: {dw:.2f}
 - Outliers (resíduos padronizados > 3): {outliers}
 """
 
     imagens = []
 
-    # 📊 Histograma dos resíduos
     plt.figure(figsize=(6, 4))
     aplicar_estilo_minitab()
     sns.histplot(residuos, kde=True, color="steelblue", edgecolor="black")
     plt.title("Histograma dos Resíduos")
     imagens.append(salvar_grafico())
 
-    # 📈 QQ-Plot
     sm.qqplot(residuos, line='45', fit=True)
     plt.title("QQ-Plot dos Resíduos")
     imagens.append(salvar_grafico())
 
-    # 📉 Resíduos vs Ajustados
     plt.figure(figsize=(6, 4))
     aplicar_estilo_minitab()
     plt.scatter(modelo.fittedvalues, residuos, edgecolor="black", color="darkorange", alpha=0.6)
@@ -157,6 +157,7 @@ Y = {equacao}
     imagens.append(salvar_grafico())
 
     return texto.strip(), imagens
+
 
 
 ANALISES = {
