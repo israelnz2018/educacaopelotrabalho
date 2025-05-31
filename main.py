@@ -1,6 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import JSONResponse
 import pandas as pd
+import os
 
 from leitura import ler_arquivo
 from suporte import interpretar_coluna
