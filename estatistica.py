@@ -86,9 +86,19 @@ def analise_regressao_linear_multipla(df, colunas):
 
     X = df[x_cols].apply(pd.to_numeric, errors='coerce')
     Y = pd.to_numeric(df[y_col], errors='coerce')
-    X = sm.add_constant(X)
-    modelo = sm.OLS(Y, X, missing='drop').fit()
 
+    # Remover linhas com NaN
+    dados = pd.concat([X, Y], axis=1).dropna()
+    X = dados[x_cols]
+    Y = dados[y_col]
+
+    if len(dados) < 3:
+        raise ValueError("Não há dados suficientes após remoção de NaNs para análise.")
+
+    X_const = sm.add_constant(X)
+    modelo = sm.OLS(Y, X_const).fit()
+
+    # Equação
     eq_terms = [f"{coef:.2f}*{var}" for var, coef in modelo.params.items() if var != 'const']
     equacao = f"{modelo.params['const']:.2f} + " + " + ".join(eq_terms)
 
@@ -99,16 +109,16 @@ def analise_regressao_linear_multipla(df, colunas):
 
     # VIF
     vif_data = pd.DataFrame()
-    vif_data["Variável"] = X.columns
-    vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+    vif_data["Variável"] = X_const.columns
+    vif_data["VIF"] = [variance_inflation_factor(X_const.values, i) for i in range(X_const.shape[1])]
 
     # Resíduos
     residuos = modelo.resid
     residuos_padronizados = (residuos - residuos.mean()) / residuos.std()
     outliers = sum(abs(residuos_padronizados) > 3)
 
-    # Normalidade (Anderson-Darling)
-    stat_ad, crit_vals, sig_levels = anderson(residuos, dist='norm')
+    # Anderson-Darling
+    stat_ad, crit_vals, sig_levels = stats.anderson(residuos, dist='norm')
     limiar_5 = crit_vals[sig_levels.tolist().index(5.0)]
     passou_normalidade = stat_ad < limiar_5
 
@@ -127,7 +137,7 @@ Y = {equacao}
 - Valor-p do modelo = {p_valor_modelo:.4f}
 
 🔹 VIF (fator de inflação da variância):\n""" + \
-    "\n".join([f"  - {row['Variável']}: {row['VIF']:.2f}" for _, row in vif_data.iterrows() if row['Variável'] != 'const']) + f"""
+        "\n".join([f"  - {row['Variável']}: {row['VIF']:.2f}" for _, row in vif_data.iterrows() if row['Variável'] != 'const']) + f"""
 
 🔹 Resíduos:
 - Teste de Anderson-Darling (normalidade, 5%): {'✅' if passou_normalidade else '❌'} (estatística = {stat_ad:.4f}, limite crítico = {limiar_5:.4f})
@@ -135,30 +145,14 @@ Y = {equacao}
 - Outliers (resíduos padronizados > 3): {outliers}
 """
 
-    imagens = []
-
+    # Apenas 1 gráfico, conforme combinado: Histograma dos Resíduos
     plt.figure(figsize=(6, 4))
     aplicar_estilo_minitab()
     sns.histplot(residuos, kde=True, color="steelblue", edgecolor="black")
     plt.title("Histograma dos Resíduos")
-    imagens.append(salvar_grafico())
+    imagem = salvar_grafico()
 
-    sm.qqplot(residuos, line='45', fit=True)
-    plt.title("QQ-Plot dos Resíduos")
-    imagens.append(salvar_grafico())
-
-    plt.figure(figsize=(6, 4))
-    aplicar_estilo_minitab()
-    plt.scatter(modelo.fittedvalues, residuos, edgecolor="black", color="darkorange", alpha=0.6)
-    plt.axhline(0, linestyle="--", color="gray")
-    plt.xlabel("Valores Ajustados")
-    plt.ylabel("Resíduos")
-    plt.title("Resíduos vs Valores Ajustados")
-    imagens.append(salvar_grafico())
-
-    return texto.strip(), imagens
-
-
+    return texto.strip(), imagem
 
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
