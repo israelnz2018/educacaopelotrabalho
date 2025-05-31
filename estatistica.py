@@ -21,6 +21,18 @@ def salvar_grafico():
     os.remove(caminho)
     return img_base64
 
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import statsmodels.api as sm
+import base64
+import os
+import io
+
+from estilo import aplicar_estilo_minitab
+from graficos import salvar_grafico
+
 def analise_regressao_linear_simples(df, colunas):
     X = df[colunas[0]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
     Y = df[colunas[1]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
@@ -59,7 +71,6 @@ def analise_regressao_linear_simples(df, colunas):
     plt.title("Regressão Linear Simples")
 
     return resumo, salvar_grafico()
-
 
 def analise_regressao_linear_multipla(df, colunas):
     X = df[colunas[:-1]]
