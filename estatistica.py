@@ -269,20 +269,29 @@ def teste_normalidade(df, colunas_usadas):
 
     # 🎯 Gráfico de probabilidade normal (estilo Minitab)
     aplicar_estilo_minitab()
-    fig, ax = plt.subplots(figsize=(6, 4))
-    stats.probplot(serie, dist="norm", plot=ax)
-    ax.set_title(f"Gráfico de Probabilidade Normal - {coluna}")
-    ax.set_xlabel(coluna)
-    ax.set_ylabel("Percentual")
 
-    buffer = BytesIO()
+    fig, ax = plt.subplots(figsize=(6, 4))
+    res = stats.probplot(serie, dist="norm", plot=ax)
+
+    ax.get_lines()[1].set_color("red")  # linha de tendência em vermelho
+    ax.set_title(f"Gráfico de Probabilidade de {coluna}", fontsize=14)
+    ax.set_xlabel(coluna, fontsize=12)
+    ax.set_ylabel("Percentual", fontsize=12)
+
+    from matplotlib.ticker import FuncFormatter
+    def formatar_percentual(x, _): return f"{100 * x:.0f}%"
+    ax.yaxis.set_major_formatter(FuncFormatter(formatar_percentual))
+    ax.grid(True, linestyle="--", alpha=0.7)
+
     plt.tight_layout()
+    buffer = BytesIO()
     plt.savefig(buffer, format="png")
     plt.close(fig)
     buffer.seek(0)
     imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
     return texto, imagem_base64
+
 
 
 ANALISES = {
