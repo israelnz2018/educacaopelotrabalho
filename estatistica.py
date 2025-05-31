@@ -153,7 +153,70 @@ Y = {equacao}
 
     return texto.strip(), imagem
 
+def analise_descritiva(df, coluna_y, colunas_x=None):
+    if coluna_y not in df.columns:
+        return {
+            "analise": "❌ A coluna selecionada para análise descritiva não foi encontrada.",
+            "graficos": [],
+            "colunas_utilizadas": []
+        }
+
+    serie = df[coluna_y].dropna()
+
+    if serie.empty:
+        return {
+            "analise": "❌ A coluna selecionada não contém dados numéricos válidos.",
+            "graficos": [],
+            "colunas_utilizadas": []
+        }
+
+    media = serie.mean()
+    mediana = serie.median()
+    desvio = serie.std()
+    variancia = serie.var()
+    minimo = serie.min()
+    maximo = serie.max()
+    q1 = serie.quantile(0.25)
+    q3 = serie.quantile(0.75)
+    assimetria = serie.skew()
+    curtose = serie.kurtosis()
+    n = serie.count()
+
+    resumo = f"""📊 **Análise Descritiva da coluna '{coluna_y}'**  
+- Média: {media:.2f}  
+- Mediana: {mediana:.2f}  
+- Desvio Padrão: {desvio:.2f}  
+- Variância: {variancia:.2f}  
+- Mínimo: {minimo:.2f}  
+- 1º Quartil (Q1): {q1:.2f}  
+- 3º Quartil (Q3): {q3:.2f}  
+- Máximo: {maximo:.2f}  
+- Assimetria: {assimetria:.2f}  
+- Curtose: {curtose:.2f}  
+- N: {n}"""
+
+    aplicar_estilo_minitab()
+    fig, ax = plt.subplots(figsize=(8, 1.5))
+    sns.boxplot(x=serie, orient='h', ax=ax)
+    ax.set_title(f"Boxplot - {coluna_y}")
+    ax.set_xlabel(coluna_y)
+
+    buffer = BytesIO()
+    plt.tight_layout()
+    plt.savefig(buffer, format='png')
+    plt.close(fig)
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+
+    return {
+        "analise": resumo,
+        "graficos": [imagem_base64],
+        "colunas_utilizadas": [coluna_y]
+    }
+
+
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
-    "regressao_multipla": analise_regressao_linear_multipla
+    "regressao_multipla": analise_regressao_linear_multipla,
+    "analise_descritiva": analise_descritiva
 }
