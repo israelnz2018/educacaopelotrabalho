@@ -82,10 +82,21 @@ async def analisar(
             "colunas_utilizadas": colunas_usadas
         }
 
-    except ValueError as e:
+                    except ValueError as e:
         return JSONResponse(content={"erro": str(e)}, status_code=400)
+
     except Exception as e:
-        return JSONResponse(content={"erro": "Erro interno ao processar a análise.", "detalhe": str(e)}, status_code=500)
+        import traceback
+        tb = traceback.format_exc()
+        print("🔴 ERRO COMPLETO:\n", tb)
+        return JSONResponse(
+            content={
+                "erro": "Erro interno ao processar a análise.",
+                "detalhe": str(e),
+                "traceback": tb
+            },
+            status_code=500
+        )
 
 
 # ✅ Bloco necessário para manter o Railway rodando
