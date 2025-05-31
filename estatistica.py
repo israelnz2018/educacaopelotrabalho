@@ -74,8 +74,7 @@ import seaborn as sns
 import pandas as pd
 
 from suporte import interpretar_coluna
-from util import aplicar_estilo_minitab, salvar_grafico
-
+from estilo import aplicar_estilo_minitab
 
 def analise_regressao_linear_multipla(df, colunas):
     colunas = [interpretar_coluna(df, c) for c in colunas]
