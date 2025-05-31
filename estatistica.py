@@ -147,6 +147,5 @@ Y = {equacao}
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
     "regressao_multipla": analise_regressao_linear_multipla,
-    "regressao_logistica_binaria": analise_regressao_logistica_binaria,
     "analise_descritiva": analise_descritiva
 }
