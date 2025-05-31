@@ -25,9 +25,13 @@ async def analisar(
         df = await ler_arquivo(arquivo)
         colunas_usadas = []
 
+        # ✅ Traduzir coluna_y da letra para o nome da coluna
+        nome_coluna_y = None
         if coluna_y and coluna_y.strip():
-            colunas_usadas.append(interpretar_coluna(df, coluna_y.strip()))
+            nome_coluna_y = interpretar_coluna(df, coluna_y.strip())
+            colunas_usadas.append(nome_coluna_y)
 
+        # ✅ Traduzir colunas_x da letra para o nome das colunas
         colunas_x_lista = []
         if colunas_x:
             if isinstance(colunas_x, str):
@@ -35,8 +39,8 @@ async def analisar(
             elif isinstance(colunas_x, list):
                 colunas_x_lista = [x.strip() for x in colunas_x if isinstance(x, str) and x.strip()]
 
-        # ⬇️ Agora adiciona os nomes das colunas diretamente, sem interpretar como letras
-        colunas_usadas += colunas_x_lista
+            colunas_convertidas = [interpretar_coluna(df, letra) for letra in colunas_x_lista]
+            colunas_usadas += colunas_convertidas
 
         if not colunas_usadas:
             return JSONResponse(content={"erro": "Informe ao menos coluna_y ou colunas_x."}, status_code=422)
@@ -50,15 +54,12 @@ async def analisar(
         imagem_grafico_isolado_base64 = None
         explicacao_ia = None
 
-
         # ✅ Caso 1: análise estatística
         if ferramenta and ferramenta.strip():
             funcao = ANALISES.get(ferramenta.strip())
             if not funcao:
                 return JSONResponse(content={"erro": "Análise estatística desconhecida."}, status_code=400)
             resultado_texto, imagem_analise_base64 = funcao(df, colunas_usadas)
-
-            # ✅ Interpretação da análise pelo agente de IA
             explicacao_ia = interpretar_analise(resultado_texto)
 
         # ✅ Caso 2: gráfico isolado
@@ -67,18 +68,17 @@ async def analisar(
             if not funcao:
                 return JSONResponse(content={"erro": "Gráfico desconhecido."}, status_code=400)
 
-            # ✅ Passa colunas específicas apenas para o histograma múltiplo
             if grafico.strip() == "histograma_multiplo":
                 imagem_grafico_isolado_base64 = funcao(
                     df,
-                    colunas_x_lista,
-                    coluna_y=interpretar_coluna(df, coluna_y) if coluna_y else None
+                    colunas_convertidas,
+                    coluna_y=nome_coluna_y
                 )
             else:
                 imagem_grafico_isolado_base64 = funcao(
                     df,
                     colunas_usadas,
-                    coluna_y=interpretar_coluna(df, coluna_y) if coluna_y else None
+                    coluna_y=nome_coluna_y
                 )
 
         if not ferramenta and not grafico:
@@ -107,8 +107,8 @@ async def analisar(
             status_code=500
         )
 
-
-# ✅ Bloco necessário para manter o Railway rodando
+# ✅ Mantém a aplicação viva no Railway
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
