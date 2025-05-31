@@ -6,10 +6,14 @@ import statsmodels.api as sm
 from scipy import stats
 import io
 import base64
-
-
+import os
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+from statsmodels.stats.stattools import durbin_watson
+from scipy.stats import shapiro
+from sklearn.metrics import roc_curve, auc
 
 from estilo import aplicar_estilo_minitab
+
 
 def salvar_grafico():
     caminho = "grafico.png"
@@ -21,17 +25,6 @@ def salvar_grafico():
     os.remove(caminho)
     return img_base64
 
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-import statsmodels.api as sm
-import base64
-import os
-import io
-
-from estilo import aplicar_estilo_minitab
-from graficos import salvar_grafico
 
 def analise_regressao_linear_simples(df, colunas):
     X = df[colunas[0]].astype(str).str.strip().str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
@@ -72,15 +65,85 @@ def analise_regressao_linear_simples(df, colunas):
 
     return resumo, salvar_grafico()
 
+
 def analise_regressao_linear_multipla(df, colunas):
-    X = df[colunas[:-1]]
-    Y = df[colunas[-1]]
-    X_const = sm.add_constant(X)
-    modelo = sm.OLS(Y, X_const).fit()
-    r2 = modelo.rsquared_adj
-    p_valor = modelo.f_pvalue
-    resumo = f"R² ajustado = {r2:.3f}, Valor-p global do modelo = {p_valor:.3f}"
-    return resumo, None
+    aplicar_estilo_minitab()
+
+    y_col = colunas[-1]
+    x_cols = colunas[:-1]
+
+    X = df[x_cols].apply(pd.to_numeric, errors='coerce')
+    Y = pd.to_numeric(df[y_col], errors='coerce')
+    X = sm.add_constant(X)
+    modelo = sm.OLS(Y, X, missing='drop').fit()
+
+    eq_terms = [f"{coef:.2f}*{var}" for var, coef in modelo.params.items() if var != 'const']
+    equacao = f"{modelo.params['const']:.2f} + " + " + ".join(eq_terms)
+
+    r2 = modelo.rsquared
+    r2_adj = modelo.rsquared_adj
+    erro_padrao = modelo.mse_resid**0.5
+    p_valor_modelo = modelo.f_pvalue
+
+    # VIF
+    vif_data = pd.DataFrame()
+    vif_data["Variável"] = X.columns
+    vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+
+    # Resíduos
+    residuos = modelo.resid
+    residuos_padronizados = (residuos - residuos.mean()) / residuos.std()
+    outliers = sum(abs(residuos_padronizados) > 3)
+
+    # Normalidade
+    stat, p_shapiro = shapiro(residuos)
+
+    # Durbin-Watson
+    dw = durbin_watson(residuos)
+
+    texto = f"""📊 Regressão Linear Múltipla
+
+🔹 Equação:
+Y = {equacao}
+
+🔹 Qualidade do modelo:
+- R² = {r2:.3f}
+- R² ajustado = {r2_adj:.3f}
+- Erro padrão da estimativa = {erro_padrao:.3f}
+- Valor-p do modelo = {p_valor_modelo:.4f}
+
+🔹 VIF (fator de inflação da variância):\n""" + \
+    "\n".join([f"  - {row['Variável']}: {row['VIF']:.2f}" for _, row in vif_data.iterrows() if row['Variável'] != 'const']) + f"""
+
+🔹 Resíduos:
+- Teste de Shapiro-Wilk (normalidade): p = {p_shapiro:.4f} {'✅' if p_shapiro > 0.05 else '❌'}
+- Estatística de Durbin-Watson: {dw:.2f}
+- Outliers (resíduos padronizados > 3): {outliers}
+"""
+
+    imagens = []
+
+    plt.figure(figsize=(6, 4))
+    aplicar_estilo_minitab()
+    sns.histplot(residuos, kde=True, color="steelblue", edgecolor="black")
+    plt.title("Histograma dos Resíduos")
+    imagens.append(salvar_grafico())
+
+    sm.qqplot(residuos, line='45', fit=True)
+    plt.title("QQ-Plot dos Resíduos")
+    imagens.append(salvar_grafico())
+
+    plt.figure(figsize=(6, 4))
+    aplicar_estilo_minitab()
+    plt.scatter(modelo.fittedvalues, residuos, edgecolor="black", color="darkorange", alpha=0.6)
+    plt.axhline(0, linestyle="--", color="gray")
+    plt.xlabel("Valores Ajustados")
+    plt.ylabel("Resíduos")
+    plt.title("Resíduos vs Valores Ajustados")
+    imagens.append(salvar_grafico())
+
+    return texto.strip(), imagens
+
 
 def analise_regressao_logistica_binaria(df, colunas):
     X = df[colunas[:-1]]
@@ -101,6 +164,7 @@ def analise_regressao_logistica_binaria(df, colunas):
     plt.title('Curva ROC - Regressão Logística')
     plt.legend()
     return resumo, salvar_grafico()
+
 
 def analise_descritiva(df, colunas):
     if len(colunas) != 1:
@@ -127,8 +191,8 @@ def analise_descritiva(df, colunas):
 
     z = 1.96
     erro_media = z * (desvio / np.sqrt(n))
-    erro_mediana = 1.57 * (desvio / np.sqrt(n))  # aproximação
-    erro_variancia = z * (np.std([np.var(y, ddof=1) for _ in range(1000)], ddof=1))  # bootstrap rudimentar
+    erro_mediana = 1.57 * (desvio / np.sqrt(n))
+    erro_variancia = z * (np.std([np.var(y, ddof=1) for _ in range(1000)], ddof=1))
 
     texto = f"""
 **Análise Descritiva da coluna '{coluna}'**
@@ -165,6 +229,7 @@ def analise_descritiva(df, colunas):
     plt.close()
 
     return texto.strip(), imagem_base64
+
 
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
