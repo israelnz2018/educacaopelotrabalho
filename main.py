@@ -2,6 +2,7 @@ from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import JSONResponse
 import pandas as pd
 import os
+import traceback
 
 from leitura import ler_arquivo
 from suporte import interpretar_coluna
@@ -82,11 +83,10 @@ async def analisar(
             "colunas_utilizadas": colunas_usadas
         }
 
-                    except ValueError as e:
+    except ValueError as e:
         return JSONResponse(content={"erro": str(e)}, status_code=400)
 
     except Exception as e:
-        import traceback
         tb = traceback.format_exc()
         print("🔴 ERRO COMPLETO:\n", tb)
         return JSONResponse(
@@ -103,3 +103,4 @@ async def analisar(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
