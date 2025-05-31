@@ -145,12 +145,15 @@ def grafico_histograma_multiplo(df, colunas, coluna_y=None):
     coluna_y = coluna_y.strip()
     coluna_x = colunas[0].strip()
 
+    # 🚨 Correção importante: garantir que coluna_y != coluna_x
+    if coluna_y == coluna_x:
+        raise ValueError("A coluna Y e a coluna X devem ser diferentes.")
+
     if coluna_y not in df.columns:
         raise ValueError(f"A coluna Y '{coluna_y}' não foi encontrada no arquivo.")
     if coluna_x not in df.columns:
         raise ValueError(f"A coluna X '{coluna_x}' não foi encontrada no arquivo.")
 
-    # Considerando que a primeira linha é o cabeçalho, dados válidos começam da linha 2
     y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
     y = pd.to_numeric(y, errors="coerce")
     grupo = df[coluna_x].astype(str)
@@ -191,6 +194,7 @@ def grafico_histograma_multiplo(df, colunas, coluna_y=None):
     plt.ylabel("Densidade")
     plt.legend(title=coluna_x)
     return salvar_grafico()
+
 
 GRAFICOS = {
     "scatter": grafico_dispersao,
