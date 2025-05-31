@@ -64,10 +64,12 @@ async def analisar(
             funcao = GRAFICOS.get(grafico.strip())
             if not funcao:
                 return JSONResponse(content={"erro": "Gráfico desconhecido."}, status_code=400)
-            if grafico.strip().startswith("boxplot"):
-                imagem_grafico_isolado_base64 = funcao(df, colunas_usadas, coluna_y=interpretar_coluna(df, coluna_y))
-            else:
-                imagem_grafico_isolado_base64 = funcao(df, colunas_usadas)
+
+            imagem_grafico_isolado_base64 = funcao(
+                df,
+                colunas_usadas,
+                coluna_y=interpretar_coluna(df, coluna_y) if coluna_y else None
+            )
 
         if not ferramenta and not grafico:
             return JSONResponse(content={"erro": "Nenhuma ferramenta selecionada."}, status_code=400)
