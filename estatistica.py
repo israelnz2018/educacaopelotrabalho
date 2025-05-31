@@ -267,7 +267,23 @@ def teste_normalidade(df, colunas_usadas):
 {chr(10).join(dicas)}""" if dicas else f"""📊 **Teste de Normalidade - Coluna '{coluna}'**  
 {chr(10).join(resultados)}"""
 
-    return texto, None
+    # 🎯 Gráfico de probabilidade normal (estilo Minitab)
+    aplicar_estilo_minitab()
+    fig, ax = plt.subplots(figsize=(6, 4))
+    stats.probplot(serie, dist="norm", plot=ax)
+    ax.set_title(f"Gráfico de Probabilidade Normal - {coluna}")
+    ax.set_xlabel(coluna)
+    ax.set_ylabel("Percentual")
+
+    buffer = BytesIO()
+    plt.tight_layout()
+    plt.savefig(buffer, format="png")
+    plt.close(fig)
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+
+    return texto, imagem_base64
+
 
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
