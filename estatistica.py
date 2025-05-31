@@ -36,9 +36,9 @@ def analise_regressao_linear_simples(df, colunas):
     X_const = sm.add_constant(X)
     modelo = sm.OLS(Y, X_const).fit()
 
-    a = modelo.params[0]
-    b = modelo.params[1]
-    p_valor = modelo.pvalues[1]
+    a = modelo.params.iloc[0]
+    b = modelo.params.iloc[1]
+    p_valor = modelo.pvalues.iloc[1]
     r2 = modelo.rsquared
     r2_ajustado = modelo.rsquared_adj
     erro_padrao = np.sqrt(modelo.mse_resid)
@@ -59,6 +59,7 @@ def analise_regressao_linear_simples(df, colunas):
     plt.title("Regressão Linear Simples")
 
     return resumo, salvar_grafico()
+
 
 def analise_regressao_linear_multipla(df, colunas):
     X = df[colunas[:-1]]
