@@ -1,22 +1,33 @@
+# 🔢 Bibliotecas de análise de dados
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
+
+# 📊 Visualização de dados
+import matplotlib.pyplot as plt
 import seaborn as sns
+
+# 📦 Modelos estatísticos
 import statsmodels.api as sm
-from scipy import stats
-import io
-import base64
-import os
-from io import BytesIO
-from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.stats.stattools import durbin_watson
-from scipy.stats import shapiro
-from sklearn.metrics import roc_curve, auc
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+# 🧪 Testes estatísticos
+from scipy import stats
 from scipy.stats import shapiro, anderson, kstest, norm
 
+# 📈 Métricas de modelos
+from sklearn.metrics import roc_curve, auc
 
+# 💾 Manipulação de arquivos/imagens
+import io
+from io import BytesIO
+import base64
+import os
+
+# 🛠️ Funções locais do projeto
 from estilo import aplicar_estilo_minitab
 from suporte import interpretar_coluna
+
 
 def salvar_grafico():
     caminho = "grafico.png"
@@ -68,16 +79,6 @@ def analise_regressao_linear_simples(df, colunas):
 
     return resumo, salvar_grafico()
 
-from scipy.stats import anderson
-from statsmodels.stats.stattools import durbin_watson
-from statsmodels.stats.outliers_influence import variance_inflation_factor
-import statsmodels.api as sm
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-
-from suporte import interpretar_coluna
-from estilo import aplicar_estilo_minitab
 
 def analise_regressao_linear_multipla(df, colunas):
     colunas = [interpretar_coluna(df, c) for c in colunas]
