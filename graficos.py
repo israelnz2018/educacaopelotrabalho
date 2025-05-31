@@ -150,6 +150,7 @@ def grafico_histograma_multiplo(df, colunas, coluna_y=None):
     if coluna_x not in df.columns:
         raise ValueError(f"A coluna X '{coluna_x}' não foi encontrada no arquivo.")
 
+    # Considerando que a primeira linha é o cabeçalho, dados válidos começam da linha 2
     y = df[coluna_y].astype(str).str.replace(",", ".").str.replace(r"[^\d\.\-]", "", regex=True)
     y = pd.to_numeric(y, errors="coerce")
     grupo = df[coluna_x].astype(str)
@@ -165,8 +166,10 @@ def grafico_histograma_multiplo(df, colunas, coluna_y=None):
     cores = sns.color_palette("tab10", n_colors=df_plot[coluna_x].nunique())
 
     for i, (nome_grupo, dados_grupo) in enumerate(df_plot.groupby(coluna_x)):
+        dados_y = pd.to_numeric(dados_grupo[coluna_y], errors="coerce").dropna()
+
         sns.histplot(
-            x=dados_grupo[coluna_y],
+            x=dados_y,
             kde=True,
             stat="density",
             element="step",
@@ -177,7 +180,7 @@ def grafico_histograma_multiplo(df, colunas, coluna_y=None):
             edgecolor="black"
         )
         sns.kdeplot(
-            x=dados_grupo[coluna_y],
+            x=dados_y,
             color=cores[i],
             linewidth=2,
             alpha=0.9
@@ -188,7 +191,6 @@ def grafico_histograma_multiplo(df, colunas, coluna_y=None):
     plt.ylabel("Densidade")
     plt.legend(title=coluna_x)
     return salvar_grafico()
-
 
 GRAFICOS = {
     "scatter": grafico_dispersao,
