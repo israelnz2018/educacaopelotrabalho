@@ -154,31 +154,21 @@ Y = {equacao}
 
     return texto.strip(), imagem
 
-def analise_descritiva(df, colunas):
-    if isinstance(colunas, list) and len(colunas) == 1:
-        coluna_y = colunas[0]
-    else:
-        return {
-            "analise": "❌ A análise descritiva requer exatamente uma coluna Y.",
-            "graficos": [],
-            "colunas_utilizadas": []
-        }
-
+def analise_descritiva(df, colunas_usadas):
+    coluna_y = colunas_usadas[0]  # ✅ pegando diretamente a coluna
     if coluna_y not in df.columns:
-        return {
-            "analise": "❌ A coluna selecionada para análise descritiva não foi encontrada.",
-            "graficos": [],
-            "colunas_utilizadas": []
-        }
+        return (
+            "❌ A coluna selecionada para análise descritiva não foi encontrada.",
+            None
+        )
 
     serie = df[coluna_y].dropna()
 
     if serie.empty:
-        return {
-            "analise": "❌ A coluna selecionada não contém dados numéricos válidos.",
-            "graficos": [],
-            "colunas_utilizadas": []
-        }
+        return (
+            "❌ A coluna selecionada não contém dados numéricos válidos.",
+            None
+        )
 
     media = serie.mean()
     mediana = serie.median()
@@ -218,13 +208,7 @@ def analise_descritiva(df, colunas):
     buffer.seek(0)
     imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
 
-    return {
-        "analise": resumo,
-        "graficos": [imagem_base64],
-        "colunas_utilizadas": [coluna_y]
-    }
-
-
+    return resumo, imagem_base64
 
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
