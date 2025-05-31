@@ -66,11 +66,19 @@ async def analisar(
             if not funcao:
                 return JSONResponse(content={"erro": "Gráfico desconhecido."}, status_code=400)
 
-            imagem_grafico_isolado_base64 = funcao(
-                df,
-                colunas_usadas,
-                coluna_y=interpretar_coluna(df, coluna_y) if coluna_y else None
-            )
+            # ✅ Passa colunas específicas apenas para o histograma múltiplo
+            if grafico.strip() == "histograma_multiplo":
+                imagem_grafico_isolado_base64 = funcao(
+                    df,
+                    colunas_x_lista,
+                    coluna_y=interpretar_coluna(df, coluna_y) if coluna_y else None
+                )
+            else:
+                imagem_grafico_isolado_base64 = funcao(
+                    df,
+                    colunas_usadas,
+                    coluna_y=interpretar_coluna(df, coluna_y) if coluna_y else None
+                )
 
         if not ferramenta and not grafico:
             return JSONResponse(content={"erro": "Nenhuma ferramenta selecionada."}, status_code=400)
@@ -103,4 +111,3 @@ async def analisar(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
