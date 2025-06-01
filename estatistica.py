@@ -439,19 +439,19 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
 
     df_modelo = pd.concat([y_raw, X_raw], axis=1).dropna()
     y = df_modelo[nome_coluna_y].squeeze()
+
+    # Converter X para numérico com segurança
     X_temp = df_modelo[nomes_colunas_x].apply(pd.to_numeric, errors="coerce")
     df_modelo = pd.concat([y, X_temp], axis=1).dropna()
     y = df_modelo[nome_coluna_y].squeeze()
     X = df_modelo[nomes_colunas_x]
 
-
-    # 🔐 Importação correta
-    from statsmodels.miscmodels.ordinal_model import OrderedModel
-
-    # ✅ Força a conversão para Categorical Ordered
+    # Conversão segura de Y para Categorical Ordered
     if not pd.api.types.is_categorical_dtype(y) or not y.cat.ordered:
         categorias_ordenadas = sorted(y.unique())
         y = pd.Categorical(y, categories=categorias_ordenadas, ordered=True)
+
+    from statsmodels.miscmodels.ordinal_model import OrderedModel
 
     try:
         modelo = OrderedModel(y, X, distr="logit")
@@ -470,26 +470,29 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
 - P-valores < 0.05 indicam variáveis preditoras estatisticamente significativas."""
 
         imagem_base64 = None
+        try:
+            aplicar_estilo_minitab()
+            fig, ax = plt.subplots(figsize=(6, 4))
+            df_modelo[nome_coluna_y].value_counts().sort_index().plot(kind="bar", ax=ax, color="skyblue")
+            ax.set_title("Distribuição da variável ordinal")
+            ax.set_xlabel(nome_coluna_y)
+            ax.set_ylabel("Frequência")
+            plt.tight_layout()
 
-        # Gráfico de distribuição da variável ordinal
-        aplicar_estilo_minitab()
-        fig, ax = plt.subplots(figsize=(6, 4))
-        df_modelo[nome_coluna_y].value_counts().sort_index().plot(kind="bar", ax=ax, color="skyblue")
-        ax.set_title("Distribuição da variável ordinal")
-        ax.set_xlabel(nome_coluna_y)
-        ax.set_ylabel("Frequência")
-        plt.tight_layout()
-
-        buffer = BytesIO()
-        plt.savefig(buffer, format="png")
-        plt.close(fig)
-        buffer.seek(0)
-        imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+            buffer = BytesIO()
+            plt.savefig(buffer, format="png")
+            plt.close(fig)
+            buffer.seek(0)
+            imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+        except Exception as e:
+            imagem_base64 = None
+            interpretacao += f"\n\n⚠️ Erro ao gerar gráfico: {str(e)}"
 
         return interpretacao + "\n\n```\n" + resumo + "\n```", imagem_base64
 
     except Exception as e:
         return f"Erro ao ajustar modelo: {str(e)}", None
+
  
 
 ANALISES = {
