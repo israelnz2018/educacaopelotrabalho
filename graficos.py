@@ -5,6 +5,8 @@ import numpy as np
 import base64
 import os
 import io
+from io import BytesIO
+
 
 from estilo import aplicar_estilo_minitab
 
