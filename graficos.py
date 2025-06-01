@@ -225,22 +225,22 @@ def grafico_barras_simples(df, colunas_usadas):
 
 def grafico_barras_agrupado(df, colunas_x, coluna_y=None):
     if not colunas_x or len(colunas_x) < 2:
-        raise ValueError("Selecione duas colunas no campo 'X' — a primeira será o eixo X, a segunda o agrupador.")
+        raise ValueError("Selecione duas colunas no campo X — a primeira será o eixo X, a segunda o agrupador (cores).")
 
-    coluna_x = colunas_x[0]
-    coluna_subgrupo = colunas_x[1]
+    coluna_x = colunas_x[0]            # Eixo X = primeiro item do Drop X
+    coluna_agrupador = colunas_x[1]    # Agrupador (cor) = segundo item do Drop X
 
     if coluna_x not in df.columns:
         raise ValueError(f"A coluna '{coluna_x}' não existe no DataFrame.")
-    if coluna_subgrupo not in df.columns:
-        raise ValueError(f"A coluna '{coluna_subgrupo}' não existe no DataFrame.")
+    if coluna_agrupador not in df.columns:
+        raise ValueError(f"A coluna '{coluna_agrupador}' não existe no DataFrame.")
 
     aplicar_estilo_minitab()
 
     # Tabela cruzada
-    tabela = df.groupby([coluna_x, coluna_subgrupo]).size().unstack(fill_value=0)
+    tabela = df.groupby([coluna_x, coluna_agrupador]).size().unstack(fill_value=0)
 
-    # Plot agrupado
+    # Gráfico com barras agrupadas
     fig, ax = plt.subplots(figsize=(10, 6))
     largura_barra = 0.8 / len(tabela.columns)
     posicoes = np.arange(len(tabela))
@@ -252,12 +252,13 @@ def grafico_barras_agrupado(df, colunas_x, coluna_y=None):
     ax.set_xticks(posicoes + largura_barra * (len(tabela.columns) - 1) / 2)
     ax.set_xticklabels(tabela.index, rotation=45)
 
-    ax.set_title(f'Gráfico de Barras Agrupado: {coluna_x} por {coluna_subgrupo}')
+    ax.set_title(f'Gráfico de Barras Agrupado: {coluna_x} por {coluna_agrupador}')
     ax.set_xlabel(coluna_x)
     ax.set_ylabel("Frequência")
-    ax.legend(title=coluna_subgrupo)
+    ax.legend(title=coluna_agrupador)
     plt.tight_layout()
 
+    # Exporta imagem como base64
     buffer = BytesIO()
     plt.savefig(buffer, format="png")
     plt.close(fig)
@@ -265,8 +266,6 @@ def grafico_barras_agrupado(df, colunas_x, coluna_y=None):
     imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
     return imagem_base64
-
-
 
 
 GRAFICOS = {
