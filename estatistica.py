@@ -450,6 +450,8 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
         categorias_ordenadas = sorted(y.unique())
         y = pd.Categorical(y, categories=categorias_ordenadas, ordered=True)
 
+    from statsmodels.miscmodels.ordinal_model import OrderedModel
+
     try:
         modelo = OrderedModel(y, X, distr="logit")
         resultado = modelo.fit(method="bfgs", disp=0)
@@ -487,6 +489,7 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
 
     except Exception as e:
         return f"Erro ao ajustar modelo: {str(e)}", None
+
  
 
 ANALISES = {
