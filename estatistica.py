@@ -310,60 +310,57 @@ def analise_regressao_logistica_binaria(df, colunas_usadas):
     y_raw = df[nome_coluna_y].dropna()
     X_raw = df[nomes_colunas_x]
 
-    # Transformar Y categórico binário para 0 e 1
-    if y_raw.nunique() != 2:
-        return "❌ A coluna Y deve conter exatamente duas categorias distintas para regressão logística binária.", None
-
-    le = LabelEncoder()
-    y = le.fit_transform(y_raw)
-
-    # Converter X para valores numéricos e remover valores inválidos
-    X = X_raw.apply(pd.to_numeric, errors='coerce')
-    df_modelo = pd.concat([X, pd.Series(y, name=nome_coluna_y)], axis=1).dropna()
-    X = df_modelo[nomes_colunas_x]
+    df_modelo = pd.concat([y_raw, X_raw], axis=1).dropna()
     y = df_modelo[nome_coluna_y]
+    X = df_modelo[nomes_colunas_x]
 
-    if df_modelo.empty:
-        return "❌ Não há dados válidos após a limpeza.", None
+    # Conversão para binário (0 e 1) caso a variável Y seja categórica
+    if y.dtype == object or str(y.dtype).startswith('category'):
+        y = pd.factorize(y)[0]
 
-    X_const = sm.add_constant(X)
-    modelo = sm.Logit(y, X_const).fit(disp=False)
+    X = sm.add_constant(X)
+    modelo = sm.Logit(y, X)
+    resultado = modelo.fit(disp=0)
 
-    resumo = modelo.summary2().as_text()
-    pseudo_r2 = modelo.prsquared
+    pseudo_r2 = resultado.prsquared
+    resumo = resultado.summary2().as_text()
 
-    texto = f"""📊 **Regressão Logística Binária**  
+    interpretacao = f"""📊 **Regressão Logística Binária**  
 🔹 Variável de resposta (Y): {nome_coluna_y}  
-🔹 Variáveis preditoras (X): {', '.join(nomes_colunas_x)}  
-🔹 Pseudo R²: {pseudo_r2:.4f}
+🔹 Variáveis preditoras (X): {", ".join(nomes_colunas_x)}  
+🔹 Pseudo R²: {pseudo_r2:.4f}  
 
-{resumo}"""
+📌 Este modelo estima a probabilidade de um resultado binário com base nas variáveis preditoras.  
+- Coeficientes positivos indicam aumento na chance de ocorrência do evento à medida que a variável aumenta.  
+- P-valores menores que 0.05 indicam significância estatística.  
+- O Pseudo R² mede o quanto o modelo se ajusta aos dados (quanto mais próximo de 1, melhor)."""
 
-    # Gráfico de linha ajustada (para X1 apenas)
-    aplicar_estilo_minitab()
-    fig, ax = plt.subplots(figsize=(6, 4))
-    x_plot = np.linspace(X.iloc[:, 0].min(), X.iloc[:, 0].max(), 300)
-    x_plot_const = sm.add_constant(x_plot)
-    if X.shape[1] > 1:
-        x_plot_const = sm.add_constant(pd.DataFrame({nomes_colunas_x[0]: x_plot}))
-        for col in nomes_colunas_x[1:]:
-            x_plot_const[col] = X[col].mean()
-    y_pred = modelo.predict(x_plot_const)
+    # Gráfico de linha ajustada (apenas se houver uma variável preditora)
+    imagem_base64 = None
+    if len(nomes_colunas_x) == 1:
+        aplicar_estilo_minitab()
+        x_plot = df_modelo[nomes_colunas_x[0]]
+        x_ord = np.linspace(x_plot.min(), x_plot.max(), 100)
+        X_pred = sm.add_constant(pd.DataFrame({nomes_colunas_x[0]: x_ord}))
+        y_pred = resultado.predict(X_pred)
 
-    ax.plot(x_plot, y_pred, color='blue', label='Linha ajustada')
-    ax.set_xlabel(nomes_colunas_x[0])
-    ax.set_ylabel(f'Probabilidade de {le.classes_[1]}')
-    ax.set_title('Gráfico de Linha Ajustada')
-    ax.legend()
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.scatter(x_plot, y, label="Dados reais", alpha=0.6)
+        ax.plot(x_ord, y_pred, color="black", label="Linha ajustada")
+        ax.set_xlabel(nomes_colunas_x[0])
+        ax.set_ylabel(f"Probabilidade de {nome_coluna_y}")
+        ax.set_title("Gráfico de Linha Ajustada")
+        ax.legend()
 
-    buffer = BytesIO()
-    plt.tight_layout()
-    plt.savefig(buffer, format="png")
-    plt.close(fig)
-    buffer.seek(0)
-    imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+        buffer = BytesIO()
+        plt.tight_layout()
+        plt.savefig(buffer, format="png")
+        plt.close(fig)
+        buffer.seek(0)
+        imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
-    return texto, imagem_base64
+    return interpretacao + "\n\n```\n" + resumo + "\n```", imagem_base64
+
 
 
 ANALISES = {
