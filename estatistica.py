@@ -12,13 +12,6 @@ from statsmodels.stats.stattools import durbin_watson
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.miscmodels.ordinal_model import OrderedModel
 
-modelo = OrderedModel(y, X, distr="logit")
-resultado = modelo.fit(method="bfgs", disp=0)
-
-pseudo_r2 = 1 - resultado.llf / resultado.llnull
-resumo = resultado.summary().as_text()
-
-
 # 🧪 Testes estatísticos
 from scipy import stats
 from scipy.stats import shapiro, anderson, kstest, norm
@@ -27,14 +20,16 @@ from scipy.stats import shapiro, anderson, kstest, norm
 from sklearn.metrics import roc_curve, auc
 
 # 💾 Manipulação de arquivos/imagens
-import io
-from io import BytesIO
 import base64
+from io import BytesIO
 import os
 
-# 🛠️ Funções locais do projeto
-from estilo import aplicar_estilo_minitab
+# 🧠 Funções locais do projeto
 from suporte import interpretar_coluna
+from estilo import aplicar_estilo_minitab
+
+# ✅ Todas as análises começam abaixo, dentro das funções (nunca aqui fora)
+
 
 
 def salvar_grafico():
