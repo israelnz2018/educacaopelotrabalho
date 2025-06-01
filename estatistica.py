@@ -466,11 +466,12 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
 - Coeficientes positivos indicam maior chance de estar em categorias mais altas.  
 - P-valores < 0.05 indicam variáveis preditoras estatisticamente significativas."""
 
+        # Geração do gráfico
         imagem_base64 = None
         try:
             aplicar_estilo_minitab()
             fig, ax = plt.subplots(figsize=(6, 4))
-            df_modelo[nome_coluna_y].value_counts().plot(kind="bar", ax=ax, color="skyblue")
+            df_modelo[nome_coluna_y].value_counts().sort_index().plot(kind="bar", ax=ax, color="skyblue")
             ax.set_title("Distribuição da variável resposta")
             ax.set_xlabel(nome_coluna_y)
             ax.set_ylabel("Frequência")
@@ -481,7 +482,7 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
             plt.close(fig)
             buffer.seek(0)
             imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
-        except:
+        except Exception:
             imagem_base64 = None
 
         return interpretacao + "\n\n```\n" + resumo + "\n```", imagem_base64
@@ -490,6 +491,7 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
         return f"Erro ao ajustar modelo: {str(e)}", None
 
 
+# Dicionário de análises estatísticas
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
     "regressao_multipla": analise_regressao_linear_multipla,
@@ -497,6 +499,6 @@ ANALISES = {
     "teste_normalidade": teste_normalidade,
     "regressao_logistica_binaria": analise_regressao_logistica_binaria,
     "regressao_logistica_nominal": analise_regressao_logistica_nominal,
-    "regressao_logistica_ordinal": analise_regressao_logistica_ordinal
-
+    "regressao_logistica_ordinal": analise_regressao_logistica_ordinal,
 }
+
