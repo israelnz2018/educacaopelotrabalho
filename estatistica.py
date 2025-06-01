@@ -438,7 +438,11 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
 
     df_modelo = pd.concat([y_raw, X_raw], axis=1).dropna()
     y = df_modelo[nome_coluna_y].squeeze()
+    X_temp = df_modelo[nomes_colunas_x].apply(pd.to_numeric, errors="coerce")
+    df_modelo = pd.concat([y, X_temp], axis=1).dropna()
+    y = df_modelo[nome_coluna_y].squeeze()
     X = df_modelo[nomes_colunas_x]
+
 
     # 🔐 Importação correta
     from statsmodels.miscmodels.ordinal_model import OrderedModel
