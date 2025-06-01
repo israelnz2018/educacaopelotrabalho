@@ -223,28 +223,31 @@ def grafico_barras_simples(df, colunas_usadas):
     
 def grafico_barras_agrupado(df, colunas_usadas):
     if len(colunas_usadas) != 2:
-        raise ValueError("Selecione exatamente duas colunas para o Gráfico de Barras Agrupado.")
+        return "❌ Para o Gráfico de Barras Agrupado, selecione exatamente duas colunas categóricas.", None
 
-    col_categoria, col_grupo = colunas_usadas
-    dados = df[[col_categoria, col_grupo]].dropna()
-
-    # Criação da tabela cruzada (contagem)
-    tabela = pd.crosstab(dados[col_categoria], dados[col_grupo])
+    col1, col2 = colunas_usadas
+    if df[col1].dtype != 'object':
+        df[col1] = df[col1].astype(str)
+    if df[col2].dtype != 'object':
+        df[col2] = df[col2].astype(str)
 
     aplicar_estilo_minitab()
-    fig, ax = plt.subplots(figsize=(7, 5))
-    tabela.plot(kind="bar", ax=ax)
-    ax.set_title(f"Barras Agrupadas - {col_categoria} por {col_grupo}")
-    ax.set_xlabel(col_categoria)
-    ax.set_ylabel("Frequência")
-    ax.legend(title=col_grupo)
+
+    tabela = pd.crosstab(df[col2], df[col1])
+    ax = tabela.plot(kind='bar', figsize=(8, 5), width=0.8)
+    plt.title(f"Gráfico de Barras Agrupado: {col2} por {col1}")
+    plt.xlabel(col2)
+    plt.ylabel("Contagem")
+    plt.xticks(rotation=0)
     plt.tight_layout()
 
     buffer = BytesIO()
-    plt.savefig(buffer, format="png")
-    plt.close(fig)
+    plt.savefig(buffer, format='png')
+    plt.close()
     buffer.seek(0)
     imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+
+    return "📊 Gráfico de Barras Agrupado gerado com sucesso.", imagem_base64
 
     return imagem_base64
 
