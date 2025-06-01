@@ -488,5 +488,6 @@ ANALISES = {
     "teste_normalidade": teste_normalidade,
     "regressao_logistica_binaria": analise_regressao_logistica_binaria,
     "regressao_logistica_nominal": analise_regressao_logistica_nominal,
+    "regressao_logistica_ordinal": analise_regressao_logistica_ordinal
 
 }
