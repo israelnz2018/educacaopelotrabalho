@@ -335,7 +335,6 @@ def analise_regressao_logistica_binaria(df, colunas_usadas):
 - P-valores menores que 0.05 indicam significância estatística.  
 - O Pseudo R² mede o quanto o modelo se ajusta aos dados (quanto mais próximo de 1, melhor)."""
 
-    imagem_base64 = None
 
     # Gráfico de linha ajustada (apenas se houver uma variável preditora)
     if len(nomes_colunas_x) == 1:
