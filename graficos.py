@@ -225,24 +225,25 @@ def grafico_barras_agrupado(df, colunas_usadas, coluna_y=None):
     if len(colunas_usadas) != 2:
         raise ValueError("O gráfico de barras agrupado requer exatamente duas colunas.")
 
-    col1, col2 = colunas_usadas
+    eixo_x, subgrupo = colunas_usadas
 
-    # Garantir que são categóricas (se não forem, converter para string)
-    df[col1] = df[col1].astype(str)
-    df[col2] = df[col2].astype(str)
+    # Garantir que são categóricas (ou converter)
+    df[eixo_x] = df[eixo_x].astype(str)
+    df[subgrupo] = df[subgrupo].astype(str)
 
-    # Contagem agrupada
-    dados = df.groupby([col1, col2]).size().unstack(fill_value=0)
+    # Agrupar e reestruturar os dados
+    dados = df.groupby([eixo_x, subgrupo]).size().reset_index(name='Contagem')
+    dados_pivot = dados.pivot(index=eixo_x, columns=subgrupo, values='Contagem').fillna(0)
 
     aplicar_estilo_minitab()
-    ax = dados.plot(kind="bar", figsize=(10, 6))
+    ax = dados_pivot.plot(kind="bar", figsize=(10, 6))
     ax.set_title("Gráfico de Barras Agrupado")
-    ax.set_xlabel(col1)
+    ax.set_xlabel(eixo_x)
     ax.set_ylabel("Contagem")
     plt.xticks(rotation=0)
     plt.tight_layout()
 
-    # Salvar imagem
+    # Exportar imagem
     buffer = io.BytesIO()
     plt.savefig(buffer, format="png")
     plt.close()
