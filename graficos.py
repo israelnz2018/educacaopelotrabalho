@@ -195,6 +195,59 @@ def grafico_histograma_multiplo(df, colunas, coluna_y=None):
     plt.legend(title=coluna_x)
     return salvar_grafico()
 
+def grafico_barras_simples(df, colunas_usadas):
+    if len(colunas_usadas) != 1:
+        raise ValueError("Selecione exatamente uma coluna para o Gráfico de Barras Simples.")
+
+    nome_coluna = colunas_usadas[0]
+    serie = df[nome_coluna].dropna()
+
+    # Contagem de frequência dos valores
+    contagem = serie.value_counts().sort_index()
+
+    aplicar_estilo_minitab()
+    fig, ax = plt.subplots(figsize=(6, 4))
+    contagem.plot(kind='bar', color='skyblue', ax=ax)
+    ax.set_title(f"Gráfico de Barras - {nome_coluna}")
+    ax.set_xlabel(nome_coluna)
+    ax.set_ylabel("Frequência")
+    plt.tight_layout()
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png")
+    plt.close(fig)
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+
+    return imagem_base64
+    
+def grafico_barras_agrupado(df, colunas_usadas):
+    if len(colunas_usadas) != 2:
+        raise ValueError("Selecione exatamente duas colunas para o Gráfico de Barras Agrupado.")
+
+    col_categoria, col_grupo = colunas_usadas
+    dados = df[[col_categoria, col_grupo]].dropna()
+
+    # Criação da tabela cruzada (contagem)
+    tabela = pd.crosstab(dados[col_categoria], dados[col_grupo])
+
+    aplicar_estilo_minitab()
+    fig, ax = plt.subplots(figsize=(7, 5))
+    tabela.plot(kind="bar", ax=ax)
+    ax.set_title(f"Barras Agrupadas - {col_categoria} por {col_grupo}")
+    ax.set_xlabel(col_categoria)
+    ax.set_ylabel("Frequência")
+    ax.legend(title=col_grupo)
+    plt.tight_layout()
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png")
+    plt.close(fig)
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+
+    return imagem_base64
+
 
 GRAFICOS = {
     "scatter": grafico_dispersao,
@@ -203,5 +256,7 @@ GRAFICOS = {
     "boxplot_multiplo": grafico_boxplot_multiplo,
     "histograma_simples": grafico_histograma_simples,
     "histograma_multiplo": grafico_histograma_multiplo,
+    "grafico_barras_simples": grafico_barras_simples,
+    "grafico_barras_agrupado": grafico_barras_agrupado
 }
 
