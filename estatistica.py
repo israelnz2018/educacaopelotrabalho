@@ -482,6 +482,78 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
     except Exception as e:
         return f"Erro ao ajustar modelo: {str(e)}", None
 
+def teste_2sample_t(df, colunas_usadas):
+    if len(colunas_usadas) != 2:
+        return "❌ É necessário selecionar exatamente duas colunas numéricas para o Teste 2 Sample T.", None
+
+    col1, col2 = colunas_usadas
+    serie1 = pd.to_numeric(df[col1], errors="coerce").dropna()
+    serie2 = pd.to_numeric(df[col2], errors="coerce").dropna()
+
+    if len(serie1) < 2 or len(serie2) < 2:
+        return "❌ As colunas selecionadas não possuem dados suficientes para o teste.", None
+
+    # Teste de normalidade para cada grupo (Anderson-Darling)
+    ad1 = anderson(serie1)
+    ad2 = anderson(serie2)
+    lim1 = ad1.critical_values[2]
+    lim2 = ad2.critical_values[2]
+    normal1 = ad1.statistic < lim1
+    normal2 = ad2.statistic < lim2
+
+    # Teste F para igualdade de variâncias
+    stat_f = np.var(serie1, ddof=1) / np.var(serie2, ddof=1)
+    df1, df2 = len(serie1)-1, len(serie2)-1
+    p_f = 2 * min(stats.f.cdf(stat_f, df1, df2), 1 - stats.f.cdf(stat_f, df1, df2))
+    equal_var = p_f > 0.05
+
+    # Teste t
+    t_stat, p_valor = stats.ttest_ind(serie1, serie2, equal_var=equal_var)
+
+    texto = f"""📊 **Teste T para 2 Amostras Independentes**
+
+🔹 Coluna 1: {col1}  
+🔹 Coluna 2: {col2}  
+
+🔹 Teste de normalidade (Anderson-Darling, 5%):  
+- {col1}: {"✅ Normal" if normal1 else "❌ Não normal"} (estatística = {ad1.statistic:.4f}, limite crítico = {lim1:.4f})  
+- {col2}: {"✅ Normal" if normal2 else "❌ Não normal"} (estatística = {ad2.statistic:.4f}, limite crítico = {lim2:.4f})  
+
+🔹 Teste F para igualdade de variâncias:  
+- Estatística F = {stat_f:.4f}, p = {p_f:.4f} → {"✅ Variâncias iguais" if equal_var else "❌ Variâncias diferentes"}
+
+🔹 Resultado do Teste T:  
+- Estatística t = {t_stat:.4f}, p = {p_valor:.4f}  
+- {"✅ Não há diferença significativa" if p_valor > 0.05 else "❌ Diferença estatisticamente significativa entre as médias"}"""
+
+    # Gráfico estilo Minitab
+    try:
+        aplicar_estilo_minitab()
+        fig, ax = plt.subplots(figsize=(6, 4))
+
+        dados_plot = pd.DataFrame({
+            'Valor': pd.concat([serie1, serie2]),
+            'Grupo': [col1] * len(serie1) + [col2] * len(serie2)
+        })
+
+        sns.boxplot(x="Grupo", y="Valor", data=dados_plot, ax=ax, width=0.6, palette="pastel")
+        medias = dados_plot.groupby("Grupo")["Valor"].mean()
+        ax.plot(range(len(medias)), medias, marker="o", linestyle="-", color="black", linewidth=2, label="Média")
+        ax.set_title(f"Boxplot de {col1} e {col2}")
+        ax.set_ylabel("Valores")
+        ax.legend()
+        plt.tight_layout()
+
+        buffer = BytesIO()
+        plt.savefig(buffer, format="png")
+        plt.close(fig)
+        buffer.seek(0)
+        imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+    except:
+        imagem_base64 = None
+
+    return texto, imagem_base64
+
 
 # Dicionário de análises estatísticas
 ANALISES = {
@@ -491,7 +563,8 @@ ANALISES = {
     "teste_normalidade": teste_normalidade,
     "regressao_logistica_binaria": analise_regressao_logistica_binaria,
     "regressao_logistica_nominal": analise_regressao_logistica_nominal,
-    "regressao_logistica_ordinal": analise_regressao_logistica_ordinal
+    "regressao_logistica_ordinal": analise_regressao_logistica_ordinal,
+    "teste_2sample_t": teste_2sample_t
     
 }
 
