@@ -227,10 +227,14 @@ def grafico_barras_agrupado(df, colunas_x, coluna_y):
     if not colunas_x or not isinstance(colunas_x, list):
         raise ValueError("Esperada uma lista com exatamente uma coluna X.")
 
+    # Extrai a coluna X correta
     coluna_x = colunas_x[0]
 
-    if coluna_x not in df.columns or coluna_y not in df.columns:
-        raise ValueError("As colunas especificadas não foram encontradas no DataFrame.")
+    # Valida se ambas colunas existem no DataFrame
+    if coluna_x not in df.columns:
+        raise ValueError(f"A coluna X '{coluna_x}' não foi encontrada no DataFrame.")
+    if coluna_y not in df.columns:
+        raise ValueError(f"A coluna Y '{coluna_y}' não foi encontrada no DataFrame.")
 
     aplicar_estilo_minitab()
 
@@ -251,7 +255,6 @@ def grafico_barras_agrupado(df, colunas_x, coluna_y):
     imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
     return imagem_base64
-
 
 
 
