@@ -604,6 +604,57 @@ def analise_teste_paired_t(df, colunas_usadas):
 
     return interpretacao, imagem_base64
 
+def teste_variancias(df, colunas_usadas):
+    if len(colunas_usadas) != 2:
+        return "❌ Selecione exatamente duas colunas para comparar as variâncias.", None
+
+    col1, col2 = colunas_usadas
+    serie1 = pd.to_numeric(df[col1], errors="coerce").dropna()
+    serie2 = pd.to_numeric(df[col2], errors="coerce").dropna()
+
+    if len(serie1) < 3 or len(serie2) < 3:
+        return "❌ É necessário pelo menos 3 dados em cada grupo para realizar o teste de variâncias.", None
+
+    # 🧪 Teste de normalidade (Anderson-Darling)
+    p_norm1 = anderson(serie1).critical_values[2]
+    p_norm2 = anderson(serie2).critical_values[2]
+    normal1 = stats.normaltest(serie1).pvalue > 0.05
+    normal2 = stats.normaltest(serie2).pvalue > 0.05
+
+    aviso = ""
+    if not (normal1 and normal2):
+        aviso = "⚠️ A premissa de normalidade foi violada em pelo menos um dos grupos.\n\n"
+
+    # 🧪 Teste F
+    stat_f = np.var(serie1, ddof=1) / np.var(serie2, ddof=1)
+    df1, df2 = len(serie1)-1, len(serie2)-1
+    p_f = 2 * min(stats.f.cdf(stat_f, df1, df2), 1 - stats.f.cdf(stat_f, df1, df2))
+
+    interpretacao = f"""📊 **Teste de Igualdade de Variâncias (F-Teste)**  
+🔹 Grupos comparados: {col1} e {col2}  
+🔹 Estatística F: {stat_f:.4f}  
+🔹 Valor-p (bilateral): {p_f:.4f}  
+
+{"✅ As variâncias são significativamente diferentes." if p_f < 0.05 else "➖ Não há evidência de diferença entre as variâncias."}
+"""
+
+    # 🎨 Gráfico de boxplot com estilo Minitab
+    try:
+        aplicar_estilo_minitab()
+        df_plot = pd.DataFrame({
+            "Valor": pd.concat([serie1, serie2]),
+            "Grupo": [col1] * len(serie1) + [col2] * len(serie2)
+        })
+        plt.figure(figsize=(8, 5))
+        sns.boxplot(x="Valor", y="Grupo", data=df_plot, orient="h", palette="pastel", showmeans=True,
+                    meanprops={"marker": "o", "markerfacecolor": "black", "markeredgecolor": "black"})
+        plt.title("Comparação das Variâncias (Boxplot)")
+        imagem_base64 = salvar_grafico()
+    except Exception as e:
+        print("Erro ao gerar gráfico:", str(e))
+        imagem_base64 = None
+
+    return aviso + "```\n" + interpretacao + "\n```", imagem_base64
 
 
 # Dicionário de análises estatísticas
@@ -616,7 +667,9 @@ ANALISES = {
     "regressao_logistica_nominal": analise_regressao_logistica_nominal,
     "regressao_logistica_ordinal": analise_regressao_logistica_ordinal,
     "teste_2sample_t": teste_2sample_t,
-    "teste_paired_t": analise_teste_paired_t
+    "teste_paired_t": analise_teste_paired_t,
+    "teste_variancias": teste_variancias
+
     
 }
 
