@@ -445,12 +445,13 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
     y = df_modelo[nome_coluna_y].squeeze()
     X = df_modelo[nomes_colunas_x]
 
-    # Conversão para ordinal se for categórica
-    if y.dtype == object or str(y.dtype).startswith("category"):
+    # 🔐 Importação correta
+    from statsmodels.miscmodels.ordinal_model import OrderedModel
+
+    # ✅ Força a conversão para Categorical Ordered
+    if not pd.api.types.is_categorical_dtype(y) or not y.cat.ordered:
         categorias_ordenadas = sorted(y.unique())
         y = pd.Categorical(y, categories=categorias_ordenadas, ordered=True)
-
-    from statsmodels.miscmodels.ordinal_model import OrderedModel
 
     try:
         modelo = OrderedModel(y, X, distr="logit")
@@ -470,7 +471,7 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
 
         imagem_base64 = None
 
-        # Gráfico: distribuição da variável ordinal
+        # Gráfico de distribuição da variável ordinal
         aplicar_estilo_minitab()
         fig, ax = plt.subplots(figsize=(6, 4))
         df_modelo[nome_coluna_y].value_counts().sort_index().plot(kind="bar", ax=ax, color="skyblue")
@@ -489,7 +490,6 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
 
     except Exception as e:
         return f"Erro ao ajustar modelo: {str(e)}", None
-
  
 
 ANALISES = {
