@@ -228,36 +228,40 @@ import io
 import base64
 from estilo import aplicar_estilo_minitab
 
-def grafico_barras_agrupado(df, colunas_usadas, coluna_y=None):
-    if len(colunas_usadas) != 2:
-        raise ValueError("O gráfico de barras agrupado requer exatamente duas colunas.")
-
-    eixo_x, subgrupo = colunas_usadas
-
-    df[eixo_x] = df[eixo_x].astype(str)
-    df[subgrupo] = df[subgrupo].astype(str)
-
-    # Calcular contagem
-    dados = df.groupby([eixo_x, subgrupo]).size().reset_index(name="Contagem")
+def grafico_barras_agrupado(df, coluna_x, coluna_y):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from io import BytesIO
+    import base64
+    from .estilo import aplicar_estilo_minitab
 
     aplicar_estilo_minitab()
-    plt.figure(figsize=(10, 6))
-    ax = sns.barplot(data=dados, x=eixo_x, y="Contagem", hue=subgrupo)
 
-    ax.set_title("Gráfico de Barras Agrupado")
-    ax.set_xlabel(eixo_x)
-    ax.set_ylabel("Contagem")
-    plt.xticks(rotation=0)
+    # Verificação básica
+    if coluna_x not in df.columns or coluna_y not in df.columns:
+        raise ValueError("As colunas especificadas não foram encontradas no DataFrame.")
+
+    # Agrupar e contar
+    dados = df.groupby([coluna_x, coluna_y]).size().unstack(fill_value=0)
+
+    # Plotar gráfico
+    ax = dados.plot(kind="bar", figsize=(10, 6))
+
+    plt.title(f'Gráfico de Barras Agrupado: {coluna_x} por {coluna_y}')
+    plt.xlabel(coluna_x)
+    plt.ylabel("Frequência")
+    plt.xticks(rotation=45)
+    plt.legend(title=coluna_y)
     plt.tight_layout()
 
-    buffer = io.BytesIO()
+    # Converter para base64
+    buffer = BytesIO()
     plt.savefig(buffer, format="png")
-    plt.close()
     buffer.seek(0)
-    imagem_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+    plt.close()
+
     return imagem_base64
-
-
 
 GRAFICOS = {
     "scatter": grafico_dispersao,
