@@ -292,12 +292,87 @@ def teste_normalidade(df, colunas_usadas):
 
     return texto, imagem_base64
 
+def regressao_logistica_binaria(df, colunas_usadas):
+    if len(colunas_usadas) < 2:
+        return "❌ É necessário selecionar uma variável de resposta (Y) e pelo menos uma preditora (X).", None
+
+    y_col = colunas_usadas[0]
+    x_cols = colunas_usadas[1:]
+
+    # Filtra e remove NA
+    dados = df[[y_col] + x_cols].dropna()
+
+    # Verifica se Y é binária
+    if dados[y_col].nunique() != 2:
+        return f"❌ A variável '{y_col}' deve ser binária (apenas dois valores distintos).", None
+
+    # Codifica Y se necessário
+    if dados[y_col].dtype != 'int':
+        dados[y_col] = pd.Categorical(dados[y_col]).codes
+
+    y = dados[y_col]
+    X = dados[x_cols]
+    X_const = sm.add_constant(X)
+
+    try:
+        modelo = sm.Logit(y, X_const).fit(disp=False)
+    except Exception as e:
+        return f"❌ Erro ao ajustar o modelo: {str(e)}", None
+
+    # Estatísticas principais
+    resumo = modelo.summary2().tables[1]
+    pseudo_r2 = modelo.prsquared
+    pvalores = resumo["P>|z|"]
+    significativos = pvalores[pvalores < 0.05].index.tolist()
+
+    texto = f"""📊 **Regressão Logística Binária**
+🔹 Variável de resposta: **{y_col}**
+🔹 Variáveis preditoras: **{', '.join(x_cols)}**
+🔹 Pseudo R² de McFadden: {pseudo_r2:.4f}
+
+"""
+
+    for idx, row in resumo.iterrows():
+        texto += f"- {idx}: coef = {row['Coef.']:.4f}, p = {row['P>|z|']:.4f} → {'✅ Significativo' if row['P>|z|'] < 0.05 else '❌ Não significativo'}\n"
+
+    if len(significativos) == 0:
+        texto += "\n⚠️ Nenhuma variável foi estatisticamente significativa ao nível de 5%."
+
+    # Gráfico: Linha ajustada (usando apenas a primeira preditora para visualização)
+    aplicar_estilo_minitab()
+    fig, ax = plt.subplots(figsize=(6, 4))
+
+    var_x = x_cols[0]
+    x_plot = np.linspace(X[var_x].min(), X[var_x].max(), 300)
+    x_plot_df = sm.add_constant(pd.DataFrame({var_x: x_plot}))
+    y_pred_prob = modelo.predict(x_plot_df)
+
+    # Plota os dados reais
+    ax.scatter(X[var_x], y, label="Dados reais", alpha=0.6)
+
+    # Plota a curva ajustada
+    ax.plot(x_plot, y_pred_prob, color='blue', label="Linha ajustada", linewidth=2)
+
+    ax.set_title("Gráfico de Linha Ajustada - Regressão Logística Binária")
+    ax.set_xlabel(var_x)
+    ax.set_ylabel(f"Probabilidade de {y_col}")
+    ax.legend()
+
+    buffer = BytesIO()
+    plt.tight_layout()
+    plt.savefig(buffer, format="png")
+    plt.close(fig)
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+
+    return texto, imagem_base64
 
 
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
     "regressao_multipla": analise_regressao_linear_multipla,
     "analise_descritiva": analise_descritiva,
-    "teste_normalidade": teste_normalidade
+    "teste_normalidade": teste_normalidade,
+    "regressao_logistica_binaria": regressao_logistica_binaria
 
 }
