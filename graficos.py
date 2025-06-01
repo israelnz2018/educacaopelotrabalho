@@ -271,7 +271,7 @@ GRAFICOS = {
     "histograma_simples": grafico_histograma_simples,
     "histograma_multiplo": grafico_histograma_multiplo,
     "grafico_barras_simples": grafico_barras_simples,
-    "grafico_barras_agrupado": grafico_barras_agrupado
+    "Grafico_barras_agrupado": grafico_barras_agrupado
     
 }
 
