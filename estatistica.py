@@ -417,6 +417,69 @@ def analise_regressao_logistica_nominal(df, colunas_usadas):
     except Exception as e:
         return f"Erro ao ajustar modelo: {str(e)}", None
 
+def analise_regressao_logistica_ordinal(df, colunas_usadas):
+    if len(colunas_usadas) < 2:
+        return "❌ É necessário selecionar uma coluna Y (ordinal) e pelo menos uma coluna X.", None
+
+    nome_coluna_y = colunas_usadas[0]
+    nomes_colunas_x = colunas_usadas[1:]
+
+    y_raw = df[nome_coluna_y].dropna()
+    X_raw = df[nomes_colunas_x]
+
+    df_modelo = pd.concat([y_raw, X_raw], axis=1).dropna()
+    y = df_modelo[nome_coluna_y].squeeze()
+    X_temp = df_modelo[nomes_colunas_x].apply(pd.to_numeric, errors="coerce")
+    df_modelo = pd.concat([y, X_temp], axis=1).dropna()
+    y = df_modelo[nome_coluna_y].squeeze()
+    X = df_modelo[nomes_colunas_x]
+
+    # Verifica se é ordinal
+    if not pd.api.types.is_categorical_dtype(y) or not y.cat.ordered:
+        categorias_ordenadas = sorted(y.unique())
+        y = pd.Categorical(y, categories=categorias_ordenadas, ordered=True)
+
+    try:
+        modelo = OrderedModel(y, X, distr="logit")
+        resultado = modelo.fit(method="bfgs", disp=0)
+
+        pseudo_r2 = 1 - resultado.llf / resultado.llnull
+        resumo = resultado.summary().as_text()
+
+        interpretacao = f"""📊 **Regressão Logística Ordinal**  
+🔹 Variável de resposta (Y): {nome_coluna_y} (categorias com ordem definida)  
+🔹 Variáveis preditoras (X): {", ".join(nomes_colunas_x)}  
+🔹 Pseudo R² (McFadden): {pseudo_r2:.4f}  
+
+📌 Este modelo estima a probabilidade acumulada de estar em uma determinada categoria ordinal ou inferior.  
+- Coeficientes positivos indicam maior chance de estar em categorias mais altas.  
+- P-valores < 0.05 indicam variáveis preditoras estatisticamente significativas."""
+
+        imagem_base64 = None
+        try:
+            aplicar_estilo_minitab()
+            fig, ax = plt.subplots(figsize=(6, 4))
+            df_modelo[nome_coluna_y].value_counts().sort_index().plot(kind="bar", ax=ax, color="skyblue")
+            ax.set_title("Distribuição da variável resposta")
+            ax.set_xlabel(nome_coluna_y)
+            ax.set_ylabel("Frequência")
+            plt.tight_layout()
+
+            buffer = BytesIO()
+            plt.savefig(buffer, format="png")
+            plt.close(fig)
+            buffer.seek(0)
+            imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+        except Exception as e:
+            print("Erro ao gerar gráfico:", str(e))
+            imagem_base64 = None
+
+        return interpretacao + "\n\n```\n" + resumo + "\n```", imagem_base64
+
+    except Exception as e:
+        return f"Erro ao ajustar modelo: {str(e)}", None
+
+
 
 # Dicionário de análises estatísticas
 ANALISES = {
