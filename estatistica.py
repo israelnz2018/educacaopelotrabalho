@@ -554,6 +554,57 @@ def teste_2sample_t(df, colunas_usadas):
 
     return texto, imagem_base64
 
+def analise_teste_paired_t(df, colunas_usadas):
+    if len(colunas_usadas) != 2:
+        return "❌ O teste pareado requer exatamente duas colunas.", None
+
+    col1, col2 = colunas_usadas
+    serie1 = pd.to_numeric(df[col1], errors="coerce")
+    serie2 = pd.to_numeric(df[col2], errors="coerce")
+
+    diferencas = (serie1 - serie2).dropna()
+    if len(diferencas) < 2:
+        return "❌ Dados insuficientes para o teste pareado.", None
+
+    stat, p_valor = stats.ttest_rel(serie1, serie2, nan_policy='omit')
+    media = diferencas.mean()
+    desvio = diferencas.std(ddof=1)
+    n = len(diferencas)
+
+    t_crit = stats.t.ppf(1 - 0.025, df=n - 1)
+    erro = desvio / np.sqrt(n)
+    ic = (media - t_crit * erro, media + t_crit * erro)
+
+    interpretacao = f"""📊 **Teste T Pareado**  
+🔹 Comparação entre: {col1} e {col2}  
+🔹 Número de pares: {n}  
+🔹 Média das diferenças: {media:.4f}  
+🔹 Desvio padrão das diferenças: {desvio:.4f}  
+🔹 Intervalo de confiança (95%): ({ic[0]:.4f}, {ic[1]:.4f})  
+🔹 Valor-p: {p_valor:.4f}  
+
+📌 **Conclusão**: {"❌ As médias são estatisticamente diferentes." if p_valor < 0.05 else "✅ Não há diferença estatística entre as médias."}"""
+
+    aplicar_estilo_minitab()
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.boxplot(diferencas, vert=False, patch_artist=True, boxprops=dict(facecolor='skyblue'))
+    ax.set_title("Boxplot das Diferenças")
+    ax.set_xlabel("Diferenças")
+    ax.axvline(0, color='gray', linestyle='--', linewidth=1)
+    ax.plot(media, 1, marker="x", color="red", markersize=10, label="Média")
+    ax.hlines(1, ic[0], ic[1], color="black", linewidth=2, label="IC 95%")
+    ax.legend()
+    plt.tight_layout()
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png")
+    plt.close(fig)
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+
+    return interpretacao, imagem_base64
+
+
 
 # Dicionário de análises estatísticas
 ANALISES = {
@@ -564,7 +615,8 @@ ANALISES = {
     "regressao_logistica_binaria": analise_regressao_logistica_binaria,
     "regressao_logistica_nominal": analise_regressao_logistica_nominal,
     "regressao_logistica_ordinal": analise_regressao_logistica_ordinal,
-    "teste_2sample_t": teste_2sample_t
+    "teste_2sample_t": teste_2sample_t,
+    "teste_paired_t": analise_teste_paired_t
     
 }
 
