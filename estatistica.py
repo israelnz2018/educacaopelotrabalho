@@ -10,6 +10,14 @@ import seaborn as sns
 import statsmodels.api as sm
 from statsmodels.stats.stattools import durbin_watson
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+from statsmodels.miscmodels.ordinal_model import OrderedModel
+
+modelo = OrderedModel(y, X, distr="logit")
+resultado = modelo.fit(method="bfgs", disp=0)
+
+pseudo_r2 = 1 - resultado.llf / resultado.llnull
+resumo = resultado.summary().as_text()
+
 
 # 🧪 Testes estatísticos
 from scipy import stats
@@ -443,7 +451,7 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
         y = pd.Categorical(y, categories=categorias_ordenadas, ordered=True)
 
     try:
-        modelo = sm.miscmodels.ordinal_model.OrderedModel(y, X, distr="logit")
+        modelo = OrderedModel(y, X, distr="logit")
         resultado = modelo.fit(method="bfgs", disp=0)
 
         pseudo_r2 = 1 - resultado.llf / resultado.llnull
