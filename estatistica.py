@@ -444,10 +444,8 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
     y = df_modelo[nome_coluna_y].squeeze()
     X = df_modelo[nomes_colunas_x]
 
-    # 🔐 Importação correta
     from statsmodels.miscmodels.ordinal_model import OrderedModel
 
-    # ✅ Força a conversão para Categorical Ordered
     if not pd.api.types.is_categorical_dtype(y) or not y.cat.ordered:
         categorias_ordenadas = sorted(y.unique())
         y = pd.Categorical(y, categories=categorias_ordenadas, ordered=True)
@@ -468,7 +466,6 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
 - Coeficientes positivos indicam maior chance de estar em categorias mais altas.  
 - P-valores < 0.05 indicam variáveis preditoras estatisticamente significativas."""
 
-        # 📊 Gráfico de barras com a distribuição da variável resposta
         imagem_base64 = None
         try:
             aplicar_estilo_minitab()
