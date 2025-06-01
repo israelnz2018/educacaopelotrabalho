@@ -292,65 +292,68 @@ def teste_normalidade(df, colunas_usadas):
 
     return texto, imagem_base64
 
+from sklearn.preprocessing import LabelEncoder
+import statsmodels.api as sm
+import numpy as np
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
+from estilo import aplicar_estilo_minitab
+
 def analise_regressao_logistica_binaria(df, colunas_usadas):
     if len(colunas_usadas) < 2:
-        return "❌ Selecione 1 coluna Y binária e ao menos 1 coluna X numérica.", None
+        return "❌ É necessário selecionar uma coluna Y (resposta binária) e pelo menos uma coluna X (numérica).", None
 
-    coluna_y = colunas_usadas[0]
-    colunas_x = colunas_usadas[1:]
+    nome_coluna_y = colunas_usadas[0]
+    nomes_colunas_x = colunas_usadas[1:]
 
-    y = df[coluna_y].dropna()
-    X = df[colunas_x]
+    y_raw = df[nome_coluna_y].dropna()
+    X_raw = df[nomes_colunas_x]
 
-    # Filtrar X para manter somente os índices do y (caso dropna afete y)
-    X = X.loc[y.index]
+    # Transformar Y categórico binário para 0 e 1
+    if y_raw.nunique() != 2:
+        return "❌ A coluna Y deve conter exatamente duas categorias distintas para regressão logística binária.", None
 
-    # Verificações
-    if y.nunique() != 2:
-        return "❌ A variável Y deve ser binária (somente 0 e 1).", None
-    if X.shape[1] == 0:
-        return "❌ Nenhuma variável preditora válida encontrada.", None
+    le = LabelEncoder()
+    y = le.fit_transform(y_raw)
 
-    # Adiciona constante (intercepto)
-    X = sm.add_constant(X, has_constant='add')
+    # Converter X para valores numéricos e remover valores inválidos
+    X = X_raw.apply(pd.to_numeric, errors='coerce')
+    df_modelo = pd.concat([X, pd.Series(y, name=nome_coluna_y)], axis=1).dropna()
+    X = df_modelo[nomes_colunas_x]
+    y = df_modelo[nome_coluna_y]
 
-    # Ajuste do modelo
-    modelo = sm.Logit(y, X).fit(disp=False)
+    if df_modelo.empty:
+        return "❌ Não há dados válidos após a limpeza.", None
 
-    # Pseudo R²
+    X_const = sm.add_constant(X)
+    modelo = sm.Logit(y, X_const).fit(disp=False)
+
+    resumo = modelo.summary2().as_text()
     pseudo_r2 = modelo.prsquared
 
-    # Resultados
-    resumo = modelo.summary2().tables[1]
-    linhas = [f"📌 {col}: p = {row['P>|z|']:.4f}, coef = {row['Coef.']:.4f}" for col, row in resumo.iterrows()]
-    
-    texto = f"""📊 **Regressão Logística Binária**
-🔹 Variável de Resposta: {coluna_y}
-🔹 Variáveis Preditivas: {", ".join(colunas_x)}
-🔹 Pseudo R² = {pseudo_r2:.4f}
+    texto = f"""📊 **Regressão Logística Binária**  
+🔹 Variável de resposta (Y): {nome_coluna_y}  
+🔹 Variáveis preditoras (X): {', '.join(nomes_colunas_x)}  
+🔹 Pseudo R²: {pseudo_r2:.4f}
 
-{"".join("• " + l + chr(10) for l in linhas)}
+{resumo}"""
 
-✅ Use o gráfico de linha ajustada para examinar a relação entre a variável de resposta e a preditora.
-"""
-    # Gráfico de linha ajustada (com a primeira variável preditora)
+    # Gráfico de linha ajustada (para X1 apenas)
     aplicar_estilo_minitab()
     fig, ax = plt.subplots(figsize=(6, 4))
+    x_plot = np.linspace(X.iloc[:, 0].min(), X.iloc[:, 0].max(), 300)
+    x_plot_const = sm.add_constant(x_plot)
+    if X.shape[1] > 1:
+        x_plot_const = sm.add_constant(pd.DataFrame({nomes_colunas_x[0]: x_plot}))
+        for col in nomes_colunas_x[1:]:
+            x_plot_const[col] = X[col].mean()
+    y_pred = modelo.predict(x_plot_const)
 
-    x_plot = df[colunas_x[0]].dropna()
-    y_plot = df[coluna_y].loc[x_plot.index]
-
-    x_plot_ord = np.sort(x_plot)
-    X_plot_const = sm.add_constant(x_plot_ord)
-
-    pred_prob = modelo.predict(X_plot_const)
-
-    ax.scatter(x_plot, y_plot, alpha=0.4, label="Dados observados")
-    ax.plot(x_plot_ord, pred_prob, color="blue", linewidth=2, label="Linha ajustada")
-
-    ax.set_title("Gráfico de Linha Ajustada")
-    ax.set_xlabel(colunas_x[0])
-    ax.set_ylabel(f"Probabilidade de {coluna_y} = 1")
+    ax.plot(x_plot, y_pred, color='blue', label='Linha ajustada')
+    ax.set_xlabel(nomes_colunas_x[0])
+    ax.set_ylabel(f'Probabilidade de {le.classes_[1]}')
+    ax.set_title('Gráfico de Linha Ajustada')
     ax.legend()
 
     buffer = BytesIO()
@@ -361,6 +364,7 @@ def analise_regressao_logistica_binaria(df, colunas_usadas):
     imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
     return texto, imagem_base64
+
 
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
