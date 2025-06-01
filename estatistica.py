@@ -377,7 +377,7 @@ def analise_regressao_logistica_nominal(df, colunas_usadas):
     X_raw = df[nomes_colunas_x]
 
     df_modelo = pd.concat([y_raw, X_raw], axis=1).dropna()
-    y = df_modelo[nome_coluna_y]
+    y = df_modelo[nome_coluna_y].squeeze()
     X = df_modelo[nomes_colunas_x]
 
     # Converte Y para códigos numéricos se for categórica nominal
