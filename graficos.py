@@ -221,7 +221,7 @@ def grafico_barras_simples(df, colunas_usadas):
 
     return imagem_base64
     
-def grafico_barras_agrupado(df, colunas_usadas):
+def grafico_barras_agrupado(df, colunas_x, coluna_y=None):
     if len(colunas_usadas) != 2:
         return "❌ Para o Gráfico de Barras Agrupado, selecione exatamente duas colunas categóricas.", None
 
@@ -261,5 +261,6 @@ GRAFICOS = {
     "histograma_multiplo": grafico_histograma_multiplo,
     "grafico_barras_simples": grafico_barras_simples,
     "grafico_barras_agrupado": grafico_barras_agrupado
+    
 }
 
