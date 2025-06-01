@@ -493,7 +493,6 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
     except Exception as e:
         return f"Erro ao ajustar modelo: {str(e)}", None
 
- 
 
 ANALISES = {
     "regressao_simples": analise_regressao_linear_simples,
