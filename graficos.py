@@ -201,13 +201,12 @@ def grafico_barras_simples(df, colunas_usadas):
 
     nome_coluna = colunas_usadas[0]
     serie = df[nome_coluna].dropna()
-
-    # Contagem de frequência dos valores
     contagem = serie.value_counts().sort_index()
 
     aplicar_estilo_minitab()
     fig, ax = plt.subplots(figsize=(6, 4))
     contagem.plot(kind='bar', color='skyblue', ax=ax)
+
     ax.set_title(f"Gráfico de Barras - {nome_coluna}")
     ax.set_xlabel(nome_coluna)
     ax.set_ylabel("Frequência")
@@ -220,46 +219,31 @@ def grafico_barras_simples(df, colunas_usadas):
     imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
     return imagem_base64
-    
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-import io
-import base64
-from estilo import aplicar_estilo_minitab
+
 
 def grafico_barras_agrupado(df, coluna_x, coluna_y):
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    from io import BytesIO
-    import base64
-    from .estilo import aplicar_estilo_minitab
-
-    aplicar_estilo_minitab()
-
-    # Verificação básica
     if coluna_x not in df.columns or coluna_y not in df.columns:
         raise ValueError("As colunas especificadas não foram encontradas no DataFrame.")
 
-    # Agrupar e contar
+    aplicar_estilo_minitab()
+
     dados = df.groupby([coluna_x, coluna_y]).size().unstack(fill_value=0)
 
-    # Plotar gráfico
-    ax = dados.plot(kind="bar", figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(10, 6))
+    dados.plot(kind="bar", ax=ax)
 
-    plt.title(f'Gráfico de Barras Agrupado: {coluna_x} por {coluna_y}')
-    plt.xlabel(coluna_x)
-    plt.ylabel("Frequência")
+    ax.set_title(f'Gráfico de Barras Agrupado: {coluna_x} por {coluna_y}')
+    ax.set_xlabel(coluna_x)
+    ax.set_ylabel("Frequência")
+    ax.legend(title=coluna_y)
     plt.xticks(rotation=45)
-    plt.legend(title=coluna_y)
     plt.tight_layout()
 
-    # Converter para base64
     buffer = BytesIO()
     plt.savefig(buffer, format="png")
+    plt.close(fig)
     buffer.seek(0)
     imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
-    plt.close()
 
     return imagem_base64
 
