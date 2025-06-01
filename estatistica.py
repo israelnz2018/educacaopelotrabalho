@@ -335,27 +335,26 @@ def analise_regressao_logistica_binaria(df, colunas_usadas):
 - P-valores menores que 0.05 indicam significância estatística.  
 - O Pseudo R² mede o quanto o modelo se ajusta aos dados (quanto mais próximo de 1, melhor)."""
 
+    imagem_base64 = None
 
     # Gráfico de linha ajustada (apenas se houver uma variável preditora)
+        # Gráfico de linha ajustada (apenas se houver uma variável preditora)
     if len(nomes_colunas_x) == 1:
-        aplicar_estilo_minitab()
         nome_x = nomes_colunas_x[0]
         x_plot = df_modelo[nome_x]
+        y_plot = y
+
         x_ord = np.linspace(x_plot.min(), x_plot.max(), 100)
         X_pred = sm.add_constant(pd.DataFrame({nome_x: x_ord}))
         y_pred = resultado.predict(X_pred)
 
-        b0 = resultado.params["const"]
-        b1 = resultado.params[nome_x]
-        formula = f"P(Sucesso) = exp({b0:.2f} + {b1:.5f}·{nome_x}) / (1 + exp({b0:.2f} + {b1:.5f}·{nome_x}))"
-
-        fig, ax = plt.subplots(figsize=(6.5, 4.2))
-        ax.scatter(x_plot, y, color='navy', alpha=0.7, label="Dados Reais")
-        ax.plot(x_ord, y_pred, color="firebrick", linewidth=2.2, label="Linha Ajustada")
+        aplicar_estilo_minitab()
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.scatter(x_plot, y_plot, alpha=0.7, color="black", label="Dados")
+        ax.plot(x_ord, y_pred, color="red", linewidth=2, label="Curva Ajustada")
         ax.set_xlabel(nome_x)
         ax.set_ylabel(f"Probabilidade de {nome_coluna_y}")
-        ax.set_title("Gráfico de Linha Ajustada Binária")
-        ax.text(0.5, 1.05, formula, transform=ax.transAxes, fontsize=9, ha="center", va="bottom")
+        ax.set_title("Gráfico de Linha Ajustada - Regressão Logística")
         ax.legend()
         plt.tight_layout()
 
