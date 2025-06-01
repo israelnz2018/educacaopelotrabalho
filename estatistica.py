@@ -367,6 +367,7 @@ ANALISES = {
     "regressao_multipla": analise_regressao_linear_multipla,
     "analise_descritiva": analise_descritiva,
     "teste_normalidade": teste_normalidade,
-    "regressao_logistica_binaria": regressao_logistica_binaria
+    "regressao_logistica_binaria": analise_regressao_logistica_binaria
+
 
 }
