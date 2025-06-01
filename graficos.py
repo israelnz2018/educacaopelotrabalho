@@ -230,22 +230,35 @@ def grafico_barras_agrupado(df, colunas_x, coluna_y):
     coluna_x = colunas_x[0]
 
     if coluna_x not in df.columns:
-        raise ValueError(f"A coluna X '{coluna_x}' não foi encontrada no DataFrame.")
+        raise ValueError(f"A coluna X '{coluna_x}' não foi encontrada.")
     if coluna_y not in df.columns:
-        raise ValueError(f"A coluna Y '{coluna_y}' não foi encontrada no DataFrame.")
+        raise ValueError(f"A coluna Y '{coluna_y}' não foi encontrada.")
 
     aplicar_estilo_minitab()
 
-    fig, ax = plt.subplots(figsize=(10, 6))
-    sns.countplot(data=df, x=coluna_x, hue=coluna_y, ax=ax)
+    # Contagem cruzada: eixo X × agrupador
+    tabela = df.groupby([coluna_x, coluna_y]).size().unstack(fill_value=0)
 
-    ax.set_title(f'Gráfico de Barras Agrupado: {coluna_x} por {coluna_y}')
+    # Plot com barras agrupadas
+    fig, ax = plt.subplots(figsize=(10, 6))
+    largura_barra = 0.8 / len(tabela.columns)
+    posicoes = np.arange(len(tabela))
+
+    for i, categoria in enumerate(tabela.columns):
+        valores = tabela[categoria].values
+        ax.bar(posicoes + i * largura_barra, valores,
+               width=largura_barra, label=str(categoria))
+
+    ax.set_xticks(posicoes + largura_barra * (len(tabela.columns) - 1) / 2)
+    ax.set_xticklabels(tabela.index, rotation=45)
+
     ax.set_xlabel(coluna_x)
-    ax.set_ylabel("Contagem")
+    ax.set_ylabel("Frequência")
+    ax.set_title(f'Gráfico de Barras Agrupado: {coluna_x} por {coluna_y}')
     ax.legend(title=coluna_y)
-    plt.xticks(rotation=45)
     plt.tight_layout()
 
+    # Salvar como imagem base64
     buffer = BytesIO()
     plt.savefig(buffer, format="png")
     plt.close(fig)
@@ -253,6 +266,7 @@ def grafico_barras_agrupado(df, colunas_x, coluna_y):
     imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
     return imagem_base64
+
 
 GRAFICOS = {
     "scatter": grafico_dispersao,
