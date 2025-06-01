@@ -234,8 +234,10 @@ def grafico_barras_agrupado(df, colunas_x, coluna_y):
 
     aplicar_estilo_minitab()
 
+    # Agrupa por eixo X e subgrupo (cor), e conta a frequência
     dados = df.groupby([coluna_x, coluna_y]).size().unstack(fill_value=0)
 
+    # Gera o gráfico com as categorias no eixo X e as cores representando os grupos (Y)
     fig, ax = plt.subplots(figsize=(10, 6))
     dados.plot(kind="bar", ax=ax)
 
@@ -253,6 +255,7 @@ def grafico_barras_agrupado(df, colunas_x, coluna_y):
     imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
     return imagem_base64
+
 
 
 GRAFICOS = {
