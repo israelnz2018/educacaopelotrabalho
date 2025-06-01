@@ -656,6 +656,62 @@ def teste_variancias(df, colunas_usadas):
 
     return aviso + "```\n" + interpretacao + "\n```", imagem_base64
 
+def teste_anova(df, colunas_usadas):
+    if len(colunas_usadas) < 2:
+        return "❌ O Teste ANOVA exige no mínimo duas colunas com dados numéricos (grupos).", None
+
+    dados_grupos = [df[coluna].dropna() for coluna in colunas_usadas]
+    normalidade = []
+    for i, grupo in enumerate(dados_grupos):
+        stat, critico, _ = stats.anderson(grupo)
+        if stat < critico[2]:  # 5%
+            normalidade.append(f"✅ Grupo {colunas_usadas[i]}: distribuição normal (Anderson-Darling)")
+        else:
+            normalidade.append(f"⚠️ Grupo {colunas_usadas[i]}: não segue distribuição normal")
+
+    # Teste ANOVA
+    try:
+        f_stat, p_valor = stats.f_oneway(*dados_grupos)
+    except Exception as e:
+        return f"❌ Erro ao executar o teste ANOVA: {str(e)}", None
+
+    # Interpretação
+    interpretacao = f"""📊 **Teste ANOVA (Análise de Variância)**  
+🔹 Grupos comparados: {", ".join(colunas_usadas)}  
+🔹 Estatística F: {f_stat:.4f}  
+🔹 Valor-p: {p_valor:.4f}  
+
+📌 Este teste verifica se há diferença significativa entre as médias dos grupos.  
+- Se **valor-p < 0.05**, rejeitamos H₀ e concluímos que **pelo menos um grupo tem média diferente**.
+- Se **valor-p ≥ 0.05**, **não há evidências suficientes** para afirmar que as médias diferem.
+
+🔍 **Verificação de normalidade (Anderson-Darling, 5%)**:
+""" + "\n".join(normalidade)
+
+    # Gráfico
+    try:
+        aplicar_estilo_minitab()
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.boxplot(dados_grupos, vert=False, patch_artist=True,
+                   labels=colunas_usadas, boxprops=dict(facecolor="skyblue"))
+        medias = [grupo.mean() for grupo in dados_grupos]
+        for i, media in enumerate(medias, start=1):
+            ax.plot(media, i, marker="o", color="red")
+        ax.set_title("Boxplot por Grupo (ANOVA)")
+        plt.tight_layout()
+
+        buffer = BytesIO()
+        plt.savefig(buffer, format="png")
+        plt.close(fig)
+        buffer.seek(0)
+        imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+    except Exception as e:
+        print("Erro ao gerar o gráfico:", str(e))
+        imagem_base64 = None
+
+    return interpretacao, imagem_base64
+
+
 
 # Dicionário de análises estatísticas
 ANALISES = {
@@ -668,8 +724,8 @@ ANALISES = {
     "regressao_logistica_ordinal": analise_regressao_logistica_ordinal,
     "teste_2sample_t": teste_2sample_t,
     "teste_paired_t": analise_teste_paired_t,
-    "teste_variancias": teste_variancias
+    "teste_variancias": teste_variancias,
+    "teste_anova": teste_anova
 
-    
 }
 
