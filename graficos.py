@@ -221,7 +221,12 @@ def grafico_barras_simples(df, colunas_usadas):
     return imagem_base64
 
 
-def grafico_barras_agrupado(df, coluna_x, coluna_y):
+def grafico_barras_agrupado(df, colunas_x, coluna_y):
+    if not colunas_x or not isinstance(colunas_x, list):
+        raise ValueError("Esperada uma lista com exatamente uma coluna X.")
+
+    coluna_x = colunas_x[0]
+
     if coluna_x not in df.columns or coluna_y not in df.columns:
         raise ValueError("As colunas especificadas não foram encontradas no DataFrame.")
 
@@ -246,6 +251,7 @@ def grafico_barras_agrupado(df, coluna_x, coluna_y):
     imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
     return imagem_base64
+
 
 GRAFICOS = {
     "scatter": grafico_dispersao,
