@@ -406,23 +406,24 @@ def analise_regressao_logistica_nominal(df, colunas_usadas):
 
     imagem_base64 = None
 
-    # Gráfico de barras com a distribuição das categorias da variável resposta
-    try:
-        aplicar_estilo_minitab()
-        fig, ax = plt.subplots(figsize=(6, 4))
-        df_modelo[nome_coluna_y].value_counts().plot(kind="bar", ax=ax, color="skyblue")
-        ax.set_title("Distribuição da variável resposta")
-        ax.set_xlabel(nome_coluna_y)
-        ax.set_ylabel("Frequência")
-        plt.tight_layout()
+# Gráfico de barras com a distribuição das categorias da variável resposta
+try:
+    aplicar_estilo_minitab()
+    fig, ax = plt.subplots(figsize=(6, 4))
+    df_modelo[nome_coluna_y].value_counts().sort_index().plot(kind="bar", ax=ax, color="skyblue")
+    ax.set_title("Distribuição da variável resposta")
+    ax.set_xlabel(nome_coluna_y)
+    ax.set_ylabel("Frequência")
+    plt.tight_layout()
 
-        buffer = BytesIO()
-        plt.savefig(buffer, format="png")
-        plt.close(fig)
-        buffer.seek(0)
-        imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
-    except:
-        imagem_base64 = None
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png")
+    plt.close(fig)
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+except Exception as e:
+    print("Erro ao gerar gráfico:", str(e))
+    imagem_base64 = None
 
     return interpretacao + "\n\n```\n" + resumo + "\n```", imagem_base64
 
