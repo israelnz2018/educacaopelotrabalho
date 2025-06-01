@@ -424,20 +424,23 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
     nome_coluna_y = colunas_usadas[0]
     nomes_colunas_x = colunas_usadas[1:]
 
+    # Prepara Y e converte para ordinal, se necessário
     y_raw = df[nome_coluna_y].dropna()
-    X_raw = df[nomes_colunas_x]
+    if not pd.api.types.is_categorical_dtype(y_raw) or not y_raw.cat.ordered:
+        categorias_ordenadas = sorted(y_raw.dropna().unique())
+        y = pd.Categorical(y_raw, categories=categorias_ordenadas, ordered=True)
+    else:
+        y = y_raw
 
-    df_modelo = pd.concat([y_raw, X_raw], axis=1).dropna()
-    y = df_modelo[nome_coluna_y].squeeze()
-    X_temp = df_modelo[nomes_colunas_x].apply(pd.to_numeric, errors="coerce")
-    df_modelo = pd.concat([y, X_temp], axis=1).dropna()
-    y = df_modelo[nome_coluna_y].squeeze()
+    # Converte X para numérico
+    X_raw = df[nomes_colunas_x].copy()
+    for col in nomes_colunas_x:
+        X_raw[col] = pd.to_numeric(X_raw[col], errors="coerce")
+
+    # Junta e remove linhas com dados ausentes
+    df_modelo = pd.concat([pd.Series(y, name=nome_coluna_y), X_raw], axis=1).dropna()
+    y = df_modelo[nome_coluna_y]
     X = df_modelo[nomes_colunas_x]
-
-    # Verifica se é ordinal
-    if not pd.api.types.is_categorical_dtype(y) or not y.cat.ordered:
-        categorias_ordenadas = sorted(y.unique())
-        y = pd.Categorical(y, categories=categorias_ordenadas, ordered=True)
 
     try:
         modelo = OrderedModel(y, X, distr="logit")
@@ -478,7 +481,6 @@ def analise_regressao_logistica_ordinal(df, colunas_usadas):
 
     except Exception as e:
         return f"Erro ao ajustar modelo: {str(e)}", None
-
 
 
 # Dicionário de análises estatísticas
