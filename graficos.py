@@ -221,35 +221,42 @@ def grafico_barras_simples(df, colunas_usadas):
 
     return imagem_base64
     
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+import io
+import base64
+from estilo import aplicar_estilo_minitab
+
 def grafico_barras_agrupado(df, colunas_usadas, coluna_y=None):
     if len(colunas_usadas) != 2:
         raise ValueError("O gráfico de barras agrupado requer exatamente duas colunas.")
 
     eixo_x, subgrupo = colunas_usadas
 
-    # Garantir que são categóricas (ou converter)
     df[eixo_x] = df[eixo_x].astype(str)
     df[subgrupo] = df[subgrupo].astype(str)
 
-    # Agrupar e reestruturar os dados
-    dados = df.groupby([eixo_x, subgrupo]).size().reset_index(name='Contagem')
-    dados_pivot = dados.pivot(index=eixo_x, columns=subgrupo, values='Contagem').fillna(0)
+    # Calcular contagem
+    dados = df.groupby([eixo_x, subgrupo]).size().reset_index(name="Contagem")
 
     aplicar_estilo_minitab()
-    ax = dados_pivot.plot(kind="bar", figsize=(10, 6))
+    plt.figure(figsize=(10, 6))
+    ax = sns.barplot(data=dados, x=eixo_x, y="Contagem", hue=subgrupo)
+
     ax.set_title("Gráfico de Barras Agrupado")
     ax.set_xlabel(eixo_x)
     ax.set_ylabel("Contagem")
     plt.xticks(rotation=0)
     plt.tight_layout()
 
-    # Exportar imagem
     buffer = io.BytesIO()
     plt.savefig(buffer, format="png")
     plt.close()
     buffer.seek(0)
     imagem_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
     return imagem_base64
+
 
 
 GRAFICOS = {
