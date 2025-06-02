@@ -138,6 +138,27 @@
           </select>
         </div>
       </div>
+<!-- 📌 Upload -->
+      <label for="arquivo">Anexar Arquivo (.xlsx do Excel)</label>
+      <input type="file" id="arquivo" name="arquivo" accept=".xlsx" disabled onchange="verificarArquivo()" />
+      <div id="erro-arquivo"></div>
+
+      <!-- 🔘 Botões -->
+      <div class="botoes">
+        <button id="enviar" type="submit" disabled>Enviar</button>
+        <button id="remover" type="button" onclick="removerArquivo()" disabled>Remover Arquivo</button>
+        <span id="spinner"></span>
+      </div>
+
+      <!-- 📊 Resultados -->
+      <div class="resultado-container" style="display: flex; gap: 40px; margin-top: 40px;">
+        <div id="analise" style="flex: 1; display: flex; flex-direction: column;"></div>
+        <div id="grafico" style="flex: 1; display: flex; flex-direction: column;"></div>
+      </div>
+    </form>
+  </div>
+</html>
+
 
 
 
