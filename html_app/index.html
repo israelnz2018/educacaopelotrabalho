@@ -1,63 +1,57 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Ferramenta Estatística</title>
-  <!-- (CSS e SlimSelect permanecem iguais) -->
-  <style>...</style>
-  <link href="https://cdn.jsdelivr.net/npm/slim-select@2.6.0/dist/slimselect.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/slim-select@2.6.0/dist/slimselect.min.js"></script>
+  <meta charset="UTF-8" />
+  <title>Learning by Working - Menu</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      padding: 40px;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 15px;
+      background: #fff;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    a {
+      text-decoration: none;
+      color: #0077cc;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <!-- ✅ FORMULÁRIO COMEÇA AQUI -->
-    <form id="formulario" onsubmit="enviarFormulario(event)">
-
-      <!-- layout.html -->
-      <div class="topo">
-        <img src="https://i.postimg.cc/bwxxn1sN/logo.png" alt="Logo" />
-        <h2>Learning by Working - Educação pelo Trabalho</h2>
-      </div>
-
-      <!-- controle_acesso.html -->
-      <label for="chave">Chave de Acesso</label>
-      <div class="linha-chave">
-        <input type="password" id="chave" name="senha" required />
-        <button id="validar" type="button" onclick="validarChave()">Validar</button>
-        <span id="spinner" style="display:none; margin-left: 8px; vertical-align: middle;">
-          <span style="display: inline-block; width:18px; height:18px; border: 3px solid #f3f3f3; border-top: 3px solid #4CAF50; border-radius: 50%; animation: spin 1s linear infinite;"></span>
-        </span>
-      </div>
-      <div id="mensagem-chave"></div>
-      <button id="sair" type="button" onclick="deslogar()" style="display: none; background-color: #f44336; color: white; padding: 10px 16px; border: none; border-radius: 6px; margin-bottom: 20px;">Sair</button>
-
-      <!-- formulario_opcoes.html -->
-      ... (tudo do formulário com dropdowns, colunas Y/X)
-
-      <!-- upload_botoes.html -->
-      ... (upload do arquivo, botões enviar/remover, spinner)
-
-      <!-- resultados.html -->
-      <div class="resultado-container">
-        <div id="analise"></div>
-        <div id="grafico"></div>
-      </div>
-
-    </form>
-  </div>
-
-  <!-- Scripts -->
-  <script>...controle_acesso.js...</script>
-  <script>...formulario.js...</script>
-  <script>...ui.js...</script>
+  <h1>Learning by Working</h1>
+  <ul>
+    <li><a href="Arquivo01.html" target="_blank">Parte 1 - Introdução</a></li>
+    <li><a href="Arquivo02.html" target="_blank">Parte 2 - Controle de Acesso</a></li>
+    <li><a href="Arquivo03.html" target="_blank">Parte 3 - Formulário de Opções</a></li>
+    <li><a href="Arquivo04.html" target="_blank">Parte 4 - Botões de Upload</a></li>
+    <li><a href="Arquivo05.html" target="_blank">Parte 5 - Resultados</a></li>
+    <li><a href="Arquivo06.html" target="_blank">Parte 6 - Scripts e Finalização</a></li>
+  </ul>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
