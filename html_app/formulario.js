@@ -20,6 +20,48 @@ function verificarArquivo() {
   }
 }
 
+// 🚨 Mostrar modal de erro
+function mostrarModalErro(mensagem) {
+  let modal = document.getElementById("modal-erro");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "modal-erro";
+    modal.style.position = "fixed";
+    modal.style.top = "0";
+    modal.style.left = "0";
+    modal.style.width = "100%";
+    modal.style.height = "100%";
+    modal.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+    modal.style.display = "flex";
+    modal.style.justifyContent = "center";
+    modal.style.alignItems = "center";
+    modal.style.zIndex = "1000";
+
+    const caixa = document.createElement("div");
+    caixa.style.backgroundColor = "white";
+    caixa.style.padding = "20px";
+    caixa.style.borderRadius = "8px";
+    caixa.style.maxWidth = "400px";
+    caixa.style.textAlign = "center";
+    caixa.innerHTML = `
+      <p id="modal-erro-texto" style="margin-bottom: 16px; font-size: 16px;"></p>
+      <button onclick="fecharModalErro()" style="padding: 6px 12px;">OK</button>
+    `;
+
+    modal.appendChild(caixa);
+    document.body.appendChild(modal);
+  }
+
+  document.getElementById("modal-erro-texto").textContent = mensagem;
+  modal.style.display = "flex";
+}
+
+// 🚪 Fechar modal de erro
+function fecharModalErro() {
+  const modal = document.getElementById("modal-erro");
+  if (modal) modal.style.display = "none";
+}
+
 // ✅ Validação dos campos do formulário
 function validarCamposSelecionados() {
   const ferramenta = document.getElementById('ferramenta').value;
@@ -110,4 +152,5 @@ async function enviarFormulario(event) {
     spinner.style.display = "none";
   }
 }
+
 
