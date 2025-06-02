@@ -33,6 +33,17 @@ function validarChave() {
       document.getElementById('chave').value = '';
       document.getElementById('chave').required = false;
       document.getElementById('chave').disabled = true;
+
+      // SlimSelect para multi X
+      if (window.slimSelectInstance) {
+        window.slimSelectInstance.destroy();
+      }
+      window.slimSelectInstance = new SlimSelect({
+        select: '#colunas_x',
+        settings: {
+          closeOnSelect: false
+        }
+      });
     } else {
       msg.textContent = "❌ Chave incorreta ou sem autorização.";
       msg.style.color = "red";
@@ -61,7 +72,14 @@ function deslogar() {
   document.getElementById('chave').required = true;
   document.getElementById('chave').disabled = false;
   document.getElementById('chave').value = '';
+
+  // Destroi SlimSelect ao sair
+  if (window.slimSelectInstance) {
+    window.slimSelectInstance.destroy();
+    window.slimSelectInstance = null;
+  }
 }
+
 
 
 
