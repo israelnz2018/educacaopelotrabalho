@@ -1,162 +1,160 @@
-<body>
-  <div class="container">
-    <form id="formulario" onsubmit="enviarFormulario(event)">
-      <!-- 🔝 Cabeçalho -->
-      <div class="topo">
-        <img src="https://i.postimg.cc/bwxxn1sN/logo.png" alt="Logo" />
-        <h2>Learning by Working - Educação pelo Trabalho</h2>
+<div class="container">
+  <form id="formulario" onsubmit="enviarFormulario(event)">
+    <!-- 🔝 Cabeçalho -->
+    <div class="topo">
+      <img src="https://i.postimg.cc/bwxxn1sN/logo.png" alt="Logo" />
+      <h2>Learning by Working - Educação pelo Trabalho</h2>
+    </div>
+
+    <!-- 🔐 Chave de acesso -->
+    <label for="chave">Chave de Acesso</label>
+    <div class="linha-chave">
+      <input type="password" id="chave" name="senha" required />
+      <button id="validar" type="button" onclick="validarChave()">Validar</button>
+    </div>
+    <div id="mensagem-chave"></div>
+
+    <!-- 🔓 Botão sair -->
+    <button
+      id="sair"
+      type="button"
+      onclick="deslogar()"
+      style="display: none; background-color: #f44336; color: white; padding: 10px 16px; border: none; border-radius: 6px; margin-bottom: 20px;"
+    >
+      Sair
+    </button>
+
+    <!-- 🧠 Prompt -->
+    <label for="prompt">Prompt</label>
+    <input type="text" id="prompt" name="prompt" disabled />
+
+    <!-- 🕽️ Dropdowns -->
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+      <!-- Ferramenta estatística -->
+      <div style="flex: 1; min-width: 200px;">
+        <label for="ferramenta">Ferramenta Estatística</label>
+        <select id="ferramenta" name="ferramenta" disabled>
+          <option value="">Selecione</option>
+          <option value="analise_descritiva">Análise Descritiva</option>
+          <option value="regressao_simples">Regressão Linear Simples</option>
+          <option value="regressao_multipla">Regressão Linear Múltipla</option>
+          <option value="regressao_logistica_binaria">Regressão Logística Binária</option>
+          <option value="regressao_logistica_nominal">Regressão Logística Nominal</option>
+          <option value="regressao_logistica_ordinal">Regressão Logística Ordinal</option>
+          <option value="teste_2sample_t">Teste 2 Sample T</option>
+          <option value="teste_paired_t">Teste Paired T</option>
+          <option value="teste_variancias">Teste de Variâncias</option>
+          <option value="teste_1sample_t">Teste 1 Sample T</option>
+          <option value="intervalo_confianca">Intervalo de Confiança</option>
+          <option value="teste_anova">Teste ANOVA</option>
+          <option value="teste_normalidade">Teste de Normalidade</option>
+        </select>
       </div>
 
-      <!-- 🔐 Chave de acesso -->
-      <label for="chave">Chave de Acesso</label>
-      <div class="linha-chave">
-        <input type="password" id="chave" name="senha" required />
-        <button id="validar" type="button" onclick="validarChave()">Validar</button>
-      </div>
-      <div id="mensagem-chave"></div>
-
-      <!-- 🔓 Botão sair -->
-      <button
-        id="sair"
-        type="button"
-        onclick="deslogar()"
-        style="display: none; background-color: #f44336; color: white; padding: 10px 16px; border: none; border-radius: 6px; margin-bottom: 20px;"
-      >
-        Sair
-      </button>
-
-      <!-- 🧠 Prompt -->
-      <label for="prompt">Prompt</label>
-      <input type="text" id="prompt" name="prompt" disabled />
-
-      <!-- 🕽️ Dropdowns -->
-      <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
-        <!-- Ferramenta estatística -->
-        <div style="flex: 1; min-width: 200px;">
-          <label for="ferramenta">Ferramenta Estatística</label>
-          <select id="ferramenta" name="ferramenta" disabled>
-            <option value="">Selecione</option>
-            <option value="analise_descritiva">Análise Descritiva</option>
-            <option value="regressao_simples">Regressão Linear Simples</option>
-            <option value="regressao_multipla">Regressão Linear Múltipla</option>
-            <option value="regressao_logistica_binaria">Regressão Logística Binária</option>
-            <option value="regressao_logistica_nominal">Regressão Logística Nominal</option>
-            <option value="regressao_logistica_ordinal">Regressão Logística Ordinal</option>
-            <option value="teste_2sample_t">Teste 2 Sample T</option>
-            <option value="teste_paired_t">Teste Paired T</option>
-            <option value="teste_variancias">Teste de Variâncias</option>
-            <option value="teste_1sample_t">Teste 1 Sample T</option>
-            <option value="intervalo_confianca">Intervalo de Confiança</option>
-            <option value="teste_anova">Teste ANOVA</option>
-            <option value="teste_normalidade">Teste de Normalidade</option>
-          </select>
-        </div>
-
-        <!-- Tipo de gráfico -->
-        <div style="flex: 1; min-width: 200px;">
-          <label for="grafico_tipo">Tipo de Gráfico</label>
-          <select id="grafico_tipo" name="grafico" disabled>
-            <option value="">Selecione</option>
-            <option value="boxplot_simples">Boxplot Simples</option>
-            <option value="boxplot_multiplo">Boxplot Múltiplo</option>
-            <option value="Grafico_barras_simples">Gráfico de Barras Simples</option>
-            <option value="Grafico_barras_agrupado">Gráfico de Barras Agrupado</option>
-            <option value="histograma_simples">Histograma Simples</option>
-            <option value="histograma_multiplo">Histograma Múltiplo</option>
-            <option value="grafico_bolhas">Gráfico de Bolhas</option>
-            <option value="grafico_linha">Gráfico de Linha</option>
-            <option value="grafico_pareto">Gráfico de Pareto</option>
-            <option value="grafico_pizza">Gráfico de Pizza</option>
-            <option value="scatter">Dispersão</option>
-          </select>
-        </div>
-
-        <!-- Coluna Y -->
-        <div style="flex: 1; min-width: 200px;">
-          <label for="coluna_y">Coluna Y</label>
-          <select id="coluna_y" name="coluna_y" disabled>
-            <option value="">Selecione</option>
-            <option value="A">Coluna A</option>
-            <option value="B">Coluna B</option>
-            <option value="C">Coluna C</option>
-            <option value="D">Coluna D</option>
-            <option value="E">Coluna E</option>
-            <option value="F">Coluna F</option>
-            <option value="G">Coluna G</option>
-            <option value="H">Coluna H</option>
-            <option value="I">Coluna I</option>
-            <option value="J">Coluna J</option>
-            <option value="K">Coluna K</option>
-            <option value="L">Coluna L</option>
-            <option value="M">Coluna M</option>
-            <option value="N">Coluna N</option>
-            <option value="O">Coluna O</option>
-            <option value="P">Coluna P</option>
-            <option value="Q">Coluna Q</option>
-            <option value="R">Coluna R</option>
-            <option value="S">Coluna S</option>
-            <option value="T">Coluna T</option>
-            <option value="U">Coluna U</option>
-            <option value="V">Coluna V</option>
-            <option value="W">Coluna W</option>
-            <option value="X">Coluna X</option>
-            <option value="Y">Coluna Y</option>
-            <option value="Z">Coluna Z</option>
-          </select>
-        </div>
-
-        <!-- Colunas X -->
-        <div style="flex: 1; min-width: 200px;">
-          <label for="colunas_x">Coluna(s) X</label>
-          <select id="colunas_x" name="colunas_x" multiple disabled>
-            <option value="A">Coluna A</option>
-            <option value="B">Coluna B</option>
-            <option value="C">Coluna C</option>
-            <option value="D">Coluna D</option>
-            <option value="E">Coluna E</option>
-            <option value="F">Coluna F</option>
-            <option value="G">Coluna G</option>
-            <option value="H">Coluna H</option>
-            <option value="I">Coluna I</option>
-            <option value="J">Coluna J</option>
-            <option value="K">Coluna K</option>
-            <option value="L">Coluna L</option>
-            <option value="M">Coluna M</option>
-            <option value="N">Coluna N</option>
-            <option value="O">Coluna O</option>
-            <option value="P">Coluna P</option>
-            <option value="Q">Coluna Q</option>
-            <option value="R">Coluna R</option>
-            <option value="S">Coluna S</option>
-            <option value="T">Coluna T</option>
-            <option value="U">Coluna U</option>
-            <option value="V">Coluna V</option>
-            <option value="W">Coluna W</option>
-            <option value="X">Coluna X</option>
-            <option value="Y">Coluna Y</option>
-            <option value="Z">Coluna Z</option>
-          </select>
-        </div>
+      <!-- Tipo de gráfico -->
+      <div style="flex: 1; min-width: 200px;">
+        <label for="grafico_tipo">Tipo de Gráfico</label>
+        <select id="grafico_tipo" name="grafico" disabled>
+          <option value="">Selecione</option>
+          <option value="boxplot_simples">Boxplot Simples</option>
+          <option value="boxplot_multiplo">Boxplot Múltiplo</option>
+          <option value="Grafico_barras_simples">Gráfico de Barras Simples</option>
+          <option value="Grafico_barras_agrupado">Gráfico de Barras Agrupado</option>
+          <option value="histograma_simples">Histograma Simples</option>
+          <option value="histograma_multiplo">Histograma Múltiplo</option>
+          <option value="grafico_bolhas">Gráfico de Bolhas</option>
+          <option value="grafico_linha">Gráfico de Linha</option>
+          <option value="grafico_pareto">Gráfico de Pareto</option>
+          <option value="grafico_pizza">Gráfico de Pizza</option>
+          <option value="scatter">Dispersão</option>
+        </select>
       </div>
 
-      <!-- 📌 Upload -->
-      <label for="arquivo">Anexar Arquivo (.xlsx do Excel)</label>
-      <input type="file" id="arquivo" name="arquivo" accept=".xlsx" disabled onchange="verificarArquivo()" />
-      <div id="erro-arquivo"></div>
-
-      <!-- 🔘 Botões -->
-      <div class="botoes">
-        <button id="enviar" type="submit" disabled>Enviar</button>
-        <button id="remover" type="button" onclick="removerArquivo()" disabled>Remover Arquivo</button>
-        <span id="spinner"></span>
+      <!-- Coluna Y -->
+      <div style="flex: 1; min-width: 200px;">
+        <label for="coluna_y">Coluna Y</label>
+        <select id="coluna_y" name="coluna_y" disabled>
+          <option value="">Selecione</option>
+          <option value="A">Coluna A</option>
+          <option value="B">Coluna B</option>
+          <option value="C">Coluna C</option>
+          <option value="D">Coluna D</option>
+          <option value="E">Coluna E</option>
+          <option value="F">Coluna F</option>
+          <option value="G">Coluna G</option>
+          <option value="H">Coluna H</option>
+          <option value="I">Coluna I</option>
+          <option value="J">Coluna J</option>
+          <option value="K">Coluna K</option>
+          <option value="L">Coluna L</option>
+          <option value="M">Coluna M</option>
+          <option value="N">Coluna N</option>
+          <option value="O">Coluna O</option>
+          <option value="P">Coluna P</option>
+          <option value="Q">Coluna Q</option>
+          <option value="R">Coluna R</option>
+          <option value="S">Coluna S</option>
+          <option value="T">Coluna T</option>
+          <option value="U">Coluna U</option>
+          <option value="V">Coluna V</option>
+          <option value="W">Coluna W</option>
+          <option value="X">Coluna X</option>
+          <option value="Y">Coluna Y</option>
+          <option value="Z">Coluna Z</option>
+        </select>
       </div>
 
-      <!-- 📊 Resultados -->
-      <div class="resultado-container" style="display: flex; gap: 40px; margin-top: 40px;">
-        <div id="analise" style="flex: 1; display: flex; flex-direction: column;"></div>
-        <div id="grafico" style="flex: 1; display: flex; flex-direction: column;"></div>
+      <!-- Colunas X -->
+      <div style="flex: 1; min-width: 200px;">
+        <label for="colunas_x">Coluna(s) X</label>
+        <select id="colunas_x" name="colunas_x" multiple disabled>
+          <option value="A">Coluna A</option>
+          <option value="B">Coluna B</option>
+          <option value="C">Coluna C</option>
+          <option value="D">Coluna D</option>
+          <option value="E">Coluna E</option>
+          <option value="F">Coluna F</option>
+          <option value="G">Coluna G</option>
+          <option value="H">Coluna H</option>
+          <option value="I">Coluna I</option>
+          <option value="J">Coluna J</option>
+          <option value="K">Coluna K</option>
+          <option value="L">Coluna L</option>
+          <option value="M">Coluna M</option>
+          <option value="N">Coluna N</option>
+          <option value="O">Coluna O</option>
+          <option value="P">Coluna P</option>
+          <option value="Q">Coluna Q</option>
+          <option value="R">Coluna R</option>
+          <option value="S">Coluna S</option>
+          <option value="T">Coluna T</option>
+          <option value="U">Coluna U</option>
+          <option value="V">Coluna V</option>
+          <option value="W">Coluna W</option>
+          <option value="X">Coluna X</option>
+          <option value="Y">Coluna Y</option>
+          <option value="Z">Coluna Z</option>
+        </select>
       </div>
-    </form>
-  </div>
-</body>
-</html>
+    </div>
+
+    <!-- 📌 Upload -->
+    <label for="arquivo">Anexar Arquivo (.xlsx do Excel)</label>
+    <input type="file" id="arquivo" name="arquivo" accept=".xlsx" disabled onchange="verificarArquivo()" />
+    <div id="erro-arquivo"></div>
+
+    <!-- 🔘 Botões -->
+    <div class="botoes">
+      <button id="enviar" type="submit" disabled>Enviar</button>
+      <button id="remover" type="button" onclick="removerArquivo()" disabled>Remover Arquivo</button>
+      <span id="spinner"></span>
+    </div>
+
+    <!-- 📊 Resultados -->
+    <div class="resultado-container" style="display: flex; gap: 40px; margin-top: 40px;">
+      <div id="analise" style="flex: 1; display: flex; flex-direction: column;"></div>
+      <div id="grafico" style="flex: 1; display: flex; flex-direction: column;"></div>
+    </div>
+  </form>
+</div>
+
