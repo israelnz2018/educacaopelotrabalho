@@ -1,0 +1,97 @@
+<!-- 🔧 Scripts -->
+  <script>
+    let inatividadeTimer;
+    let sessaoAtiva = false;
+    let slimSelectInstance = null;
+
+    function resetarTimer() {
+      if (!sessaoAtiva) return;
+      clearTimeout(inatividadeTimer);
+      inatividadeTimer = setTimeout(() => {
+        deslogar();
+        document.getElementById('mensagem-chave').textContent = "⏱ Sessão expirada por inatividade. Por favor, insira a chave novamente.";
+        document.getElementById('mensagem-chave').style.color = "orange";
+      }, 10 * 60 * 1000);
+    }
+
+    function iniciarMonitoramentoInatividade() {
+      ['mousemove', 'keydown', 'scroll'].forEach(evt =>
+        document.addEventListener(evt, resetarTimer)
+      );
+      document.addEventListener('click', e => {
+        if (e.target.id !== 'enviar') resetarTimer();
+      });
+    }
+
+    iniciarMonitoramentoInatividade();
+
+    async function enviarFormulario(event) {
+      event.preventDefault();
+
+      // 🛑 Verifica campos obrigatórios
+      if (!validarCamposSelecionados()) {
+        return;
+      }
+
+      const spinner = document.getElementById('spinner');
+      spinner.style.display = "inline-block";
+
+      const form = document.getElementById('formulario');
+      const formData = new FormData(form);
+      formData.delete('senha');
+
+      const containerAnalise = document.getElementById('analise');
+      const carregandoExistente = document.getElementById('carregando-analise');
+      if (carregandoExistente) carregandoExistente.remove();
+
+      const carregando = document.createElement('div');
+      carregando.id = "carregando-analise";
+      carregando.textContent = "Processando...";
+      carregando.style.marginBottom = "12px";
+      containerAnalise.prepend(carregando);
+
+      try {
+        const resposta = await fetch('https://learningbyworking.app.n8n.cloud/webhook-test/Agente-gpt', {
+          method: 'POST',
+          body: formData
+        });
+
+        const json = await resposta.json();
+
+        if (json.grafico_isolado_base64) {
+          const novoGrafico = `
+            <div class="grafico-isolado" style="margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
+              <img src="data:image/png;base64,${json.grafico_isolado_base64}" style="max-width: 100%; border-radius: 6px;" alt="Gráfico isolado" />
+            </div>
+          `;
+          const containerGrafico = document.getElementById('grafico');
+          containerGrafico.insertAdjacentHTML('afterbegin', novoGrafico);
+        }
+
+        if (json.analise && json.analise.trim() !== "") {
+          const carregandoAntigo = document.getElementById('carregando-analise');
+          if (carregandoAntigo) carregandoAntigo.remove();
+
+          const parteAnalise = json.analise
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>');
+
+          const novaAnalise = `
+            <div class="analise-completa" style="margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #ccc;">
+              <div class="analise-texto">${parteAnalise}</div>
+              ${json.grafico_base64 ? `<div class="analise-graficos"><img src="data:image/png;base64,${json.grafico_base64}" alt="Gráfico da análise" style="margin-top: 12px;" /></div>` : ""}
+            </div>
+          `;
+          containerAnalise.insertAdjacentHTML('afterbegin', novaAnalise);
+        }
+
+      } catch (error) {
+        const erroMsg = document.createElement('div');
+        erroMsg.style.color = 'red';
+        erroMsg.style.marginBottom = '12px';
+        erroMsg.textContent = `❌ Erro ao processar resposta: ${error.message}`;
+        containerAnalise.insertBefore(erroMsg, containerAnalise.firstChild);
+      } finally {
+        spinner.style.display = "none";
+      }
+    }
