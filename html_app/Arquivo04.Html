@@ -1,0 +1,92 @@
+function verificarArquivo() {
+    const arquivo = document.getElementById('arquivo').files[0];
+    const erro = document.getElementById('erro-arquivo');
+    if (!arquivo) return;
+
+    const tipoAceito = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+    if (arquivo.type !== tipoAceito && !arquivo.name.endsWith('.xlsx')) {
+      erro.textContent = "❌ Formato não aceito. Envie apenas arquivos .xlsx do Excel.";
+      document.getElementById('arquivo').value = '';
+    } else {
+      erro.textContent = '';
+    }
+  }
+
+  async function validarChave() {
+    const senha = document.getElementById('chave').value.trim();
+    const msg = document.getElementById('mensagem-chave');
+    const spinner = document.getElementById('spinner');
+
+    if (!senha) {
+      msg.textContent = "❌ Digite a chave.";
+      msg.style.color = "red";
+      return;
+    }
+
+    spinner.style.display = "inline-block";
+
+    const formData = new FormData();
+    formData.append("senha", senha);
+
+    try {
+      const resposta = await fetch("https://learningbyworking.app.n8n.cloud/webhook/senha", {
+        method: "POST",
+        body: formData
+      });
+
+      const raw = await resposta.json();
+      const data = Array.isArray(raw) ? raw : [raw];
+      const itemComNome = data.find(item => item?.nome?.trim());
+
+      if (itemComNome) {
+        msg.textContent = `✅ Acesso aprovado! Bem-vindo, ${itemComNome.nome}!`;
+        msg.style.color = "green";
+
+        ['prompt', 'arquivo', 'enviar', 'remover', 'ferramenta', 'grafico_tipo', 'coluna_y', 'colunas_x'].forEach(id => {
+          document.getElementById(id).disabled = false;
+        });
+
+        document.getElementById('sair').style.display = 'inline-block';
+
+        const campoSenha = document.getElementById('chave');
+        campoSenha.value = '';
+        campoSenha.required = false;
+        campoSenha.disabled = true;
+
+        if (slimSelectInstance) slimSelectInstance.destroy();
+        slimSelectInstance = new SlimSelect({
+          select: '#colunas_x',
+          settings: {
+            closeOnSelect: false
+          },
+          events: {
+            afterChange: (info) => {
+              slimSelectInstance.ordemSelecionada = info.map(item => item.value);
+            }
+          }
+        });
+
+        sessaoAtiva = true;
+        resetarTimer();
+      } else {
+        msg.textContent = "❌ Chave incorreta ou sem autorização.";
+        msg.style.color = "red";
+      }
+    } catch (err) {
+      msg.textContent = "❌ Erro na verificação.";
+      msg.style.color = "red";
+    } finally {
+      spinner.style.display = "none";
+    }
+  }
+
+  function removerArquivo() {
+    document.getElementById('arquivo').value = '';
+    document.getElementById('erro-arquivo').textContent = '';
+  }
+
+
+
+
+
