@@ -1,6 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import pandas as pd
 import traceback
 import os
@@ -13,18 +14,15 @@ from agente import interpretar_analise  # ✅ Agente ativado
 
 app = FastAPI()
 
-# ✅ Tornar a pasta html_app acessível no navegador
+# Monta a pasta html_app como estática para CSS, JS e outros
 app.mount("/html_app", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "html_app")), name="html_app")
 
-# ✅ Rota para servir o formulário HTML na raiz "/"
+# Configura o Jinja2 para usar a pasta html_app como templates
+templates = Jinja2Templates(directory="html_app")
+
 @app.get("/", response_class=HTMLResponse)
 async def raiz(request: Request):
-    caminho_index = os.path.join(os.path.dirname(__file__), "html_app", "index.html")
-    with open(caminho_index, "r", encoding="utf-8") as f:
-        return f.read()
-
-# Aqui seguem as outras rotas e funções que você já tinha, por exemplo:
-
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/analise")
 async def analisar(
@@ -39,13 +37,11 @@ async def analisar(
         df = await ler_arquivo(arquivo)
         colunas_usadas = []
 
-        # ✅ Traduzir coluna_y da letra para o nome da coluna
         nome_coluna_y = None
         if coluna_y and coluna_y.strip():
             nome_coluna_y = interpretar_coluna(df, coluna_y.strip())
             colunas_usadas.append(nome_coluna_y)
 
-        # ✅ Traduzir colunas_x da letra para o nome das colunas
         colunas_x_lista = []
         if colunas_x:
             if isinstance(colunas_x, str):
@@ -70,7 +66,6 @@ async def analisar(
         imagem_grafico_isolado_base64 = None
         explicacao_ia = None
 
-        # ✅ Caso 1: análise estatística
         if ferramenta and ferramenta.strip():
             funcao = ANALISES.get(ferramenta.strip())
             if not funcao:
@@ -78,7 +73,6 @@ async def analisar(
             resultado_texto, imagem_analise_base64 = funcao(df, colunas_usadas)
             explicacao_ia = interpretar_analise(resultado_texto)
 
-        # ✅ Caso 2: gráfico isolado
         if grafico and grafico.strip():
             funcao = GRAFICOS.get(grafico.strip())
             if not funcao:
@@ -116,10 +110,10 @@ async def analisar(
             status_code=500
         )
 
-# ✅ Mantém a aplicação viva no Railway
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
