@@ -8,6 +8,8 @@ statsmodels
 openpyxl
 python-multipart
 openai
+jinja2
+
 
 
 
