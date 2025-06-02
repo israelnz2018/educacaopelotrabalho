@@ -45,15 +45,12 @@ async function validarChave() {
       body: formData
     });
 
-    // Se a resposta não for ok, lança erro
     if (!resposta.ok) throw new Error("Servidor não respondeu corretamente");
 
-    const raw = await resposta.json();
-    const data = Array.isArray(raw) ? raw : [raw];
-    const itemComNome = data.find(item => item?.nome?.trim());
-
-    if (itemComNome) {
-      msg.textContent = `✅ Acesso aprovado! Bem-vindo, ${itemComNome.nome}!`;
+    const json = await resposta.json();
+    if (json && ((Array.isArray(json) && json.length > 0 && json[0].nome) || (json.nome))) {
+      const nome = Array.isArray(json) ? json[0].nome : json.nome;
+      msg.textContent = `✅ Acesso aprovado! Bem-vindo, ${nome}!`;
       msg.style.color = "green";
 
       ['prompt', 'arquivo', 'enviar', 'remover', 'ferramenta', 'grafico_tipo', 'coluna_y', 'colunas_x'].forEach(id => {
@@ -274,6 +271,7 @@ async function enviarFormulario(event) {
     spinner.style.display = "none";
   }
 }
+
 
 
 
