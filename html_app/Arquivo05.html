@@ -1,4 +1,5 @@
-function deslogar() {
+<script>
+  function deslogar() {
     if (!confirm("Tem certeza que deseja sair?\nTudo será apagado.")) return;
 
     sessaoAtiva = false;
@@ -56,8 +57,10 @@ function deslogar() {
       limparMensagensAnteriores(); // Só limpa se passar na validação
     });
   }
-function exibirModalErro(mensagem) {
+
+  function exibirModalErro(mensagem) {
     let modal = document.getElementById("modal-erro");
+
     if (!modal) {
       modal = document.createElement("div");
       modal.id = "modal-erro";
@@ -95,6 +98,8 @@ function exibirModalErro(mensagem) {
     const modal = document.getElementById("modal-erro");
     if (modal) modal.style.display = "none";
   }
+</script>
+
 
 
 
