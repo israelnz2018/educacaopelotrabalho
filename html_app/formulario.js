@@ -62,6 +62,22 @@ function fecharModalErro() {
   if (modal) modal.style.display = "none";
 }
 
+// Remove mensagens antigas de erro e alertas
+function limparMensagensAnteriores() {
+  const mensagensErro = document.querySelectorAll(".erro-aviso, .alerta, .mensagem-erro, .falha");
+  mensagensErro.forEach(msg => msg.remove());
+
+  const msgErroFetch = document.getElementById("mensagem-erro-fetch");
+  if (msgErroFetch) msgErroFetch.remove();
+
+  // Limpa também mensagens dentro do container de análise para evitar bloqueio visual
+  const containerAnalise = document.getElementById('analise');
+  if (containerAnalise) {
+    const filhos = containerAnalise.querySelectorAll('div.mensagem-erro, div.erro-aviso, div.alerta, div.falha');
+    filhos.forEach(filho => filho.remove());
+  }
+}
+
 // ✅ Validação dos campos do formulário
 function validarCamposSelecionados() {
   const ferramenta = document.getElementById('ferramenta').value;
@@ -85,6 +101,8 @@ function validarCamposSelecionados() {
 // 🚀 Enviar formulário
 async function enviarFormulario(event) {
   event.preventDefault();
+
+  limparMensagensAnteriores(); // <<< ADICIONADO AQUI
 
   if (!validarCamposSelecionados()) return;
 
@@ -152,5 +170,6 @@ async function enviarFormulario(event) {
     spinner.style.display = "none";
   }
 }
+
 
 
