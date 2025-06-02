@@ -3,45 +3,25 @@ let inatividadeTimer = null;
 let slimSelectInstance = null;
 
 // ⏱️ Timer de inatividade
-function iniciarContadorInatividade() {
+function resetarTimer() {
+  if (!sessaoAtiva) return;
   clearTimeout(inatividadeTimer);
-  inatividadeTimer = setTimeout(deslogar, 10 * 60 * 1000);
+  inatividadeTimer = setTimeout(() => {
+    deslogar();
+    document.getElementById('mensagem-chave').textContent = "⏱ Sessão expirada por inatividade. Por favor, insira a chave novamente.";
+    document.getElementById('mensagem-chave').style.color = "orange";
+  }, 10 * 60 * 1000);
 }
 
-// 🧼 Deslogar
-function deslogar() {
-  if (!confirm("Tem certeza que deseja sair?\nTudo será apagado.")) return;
-
-  sessaoAtiva = false;
-  clearTimeout(inatividadeTimer);
-
-  ['prompt', 'arquivo', 'enviar', 'remover', 'ferramenta', 'grafico_tipo', 'coluna_y', 'colunas_x'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.disabled = true;
-      if (el.tagName === "SELECT" || el.tagName === "INPUT" || el.tagName === "TEXTAREA") el.value = '';
-    }
+function iniciarMonitoramentoInatividade() {
+  ['mousemove', 'keydown', 'scroll'].forEach(evt =>
+    document.addEventListener(evt, resetarTimer)
+  );
+  document.addEventListener('click', e => {
+    if (e.target.id !== 'enviar') resetarTimer();
   });
-
-  if (slimSelectInstance) {
-    slimSelectInstance.destroy();
-    slimSelectInstance = null;
-  }
-
-  document.getElementById('analise').innerHTML = '';
-  document.getElementById('grafico').innerHTML = '';
-  document.getElementById('erro-arquivo').textContent = '';
-  const msg = document.getElementById('mensagem-chave');
-  msg.textContent = '👋 Até a próxima!';
-  msg.style.color = 'black';
-
-  document.getElementById('chave').required = true;
-  document.getElementById('chave').disabled = false;
-  document.getElementById('chave').value = '';
-  document.getElementById('validar').disabled = false;
-  document.getElementById('validar').textContent = 'Validar';
-  document.getElementById('sair').style.display = 'none';
 }
+iniciarMonitoramentoInatividade();
 
 // 🔒 Validação da chave de acesso
 async function validarChave() {
@@ -77,11 +57,12 @@ async function validarChave() {
         document.getElementById(id).disabled = false;
       });
 
-      document.getElementById('sair').style.display = 'inline-block';
+      document.getElementById('logout').style.display = 'inline-block';
 
-      document.getElementById('chave').value = '';
-      document.getElementById('chave').required = false;
-      document.getElementById('chave').disabled = true;
+      const campoSenha = document.getElementById('chave');
+      campoSenha.value = '';
+      campoSenha.required = false;
+      campoSenha.disabled = true;
 
       if (slimSelectInstance) slimSelectInstance.destroy();
       slimSelectInstance = new SlimSelect({
@@ -90,7 +71,7 @@ async function validarChave() {
       });
 
       sessaoAtiva = true;
-      iniciarContadorInatividade();
+      resetarTimer();
     } else {
       msg.textContent = "❌ Chave incorreta ou sem autorização.";
       msg.style.color = "red";
@@ -100,6 +81,67 @@ async function validarChave() {
     msg.style.color = "red";
   } finally {
     spinner.style.display = "none";
+  }
+}
+
+// 🧼 Deslogar
+function deslogar() {
+  if (!confirm("Tem certeza que deseja sair?\nTudo será apagado.")) return;
+
+  sessaoAtiva = false;
+  clearTimeout(inatividadeTimer);
+
+  ['prompt', 'arquivo', 'enviar', 'remover', 'ferramenta', 'grafico_tipo', 'coluna_y', 'colunas_x'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.disabled = true;
+      if (el.tagName === "SELECT" || el.tagName === "INPUT" || el.tagName === "TEXTAREA") el.value = '';
+    }
+  });
+
+  if (slimSelectInstance) {
+    slimSelectInstance.destroy();
+    slimSelectInstance = null;
+  }
+
+  document.getElementById('analise').innerHTML = '';
+  document.getElementById('grafico').innerHTML = '';
+  document.getElementById('erro-arquivo').textContent = '';
+  const msg = document.getElementById('mensagem-chave');
+  msg.textContent = '👋 Até a próxima!';
+  msg.style.color = 'gray';
+
+  setTimeout(() => { msg.textContent = ''; }, 2000);
+
+  const campoSenha = document.getElementById('chave');
+  const btnValidar = document.getElementById('validar');
+  campoSenha.required = true;
+  campoSenha.disabled = false;
+  campoSenha.value = '';
+  btnValidar.disabled = false;
+  btnValidar.textContent = 'Validar';
+  document.getElementById('logout').style.display = 'none';
+}
+
+// 🧹 Remover arquivo
+function removerArquivo() {
+  document.getElementById('arquivo').value = '';
+  document.getElementById('erro-arquivo').textContent = '';
+}
+
+// 📁 Verificar arquivo
+function verificarArquivo() {
+  const arquivo = document.getElementById('arquivo').files[0];
+  const erro = document.getElementById('erro-arquivo');
+  if (!arquivo) return;
+
+  const tipoAceito = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+  if (arquivo.type !== tipoAceito && !arquivo.name.endsWith('.xlsx')) {
+    erro.textContent = "❌ Formato não aceito. Envie apenas arquivos .xlsx do Excel.";
+    document.getElementById('arquivo').value = '';
+  } else {
+    erro.textContent = '';
   }
 }
 
@@ -183,31 +225,50 @@ async function enviarFormulario(event) {
   containerAnalise.prepend(carregando);
 
   try {
-    const resposta = await fetch("https://webhook.site/...", {
-      method: "POST",
+    const resposta = await fetch('https://learningbyworking.app.n8n.cloud/webhook-test/Agente-gpt', {
+      method: 'POST',
       body: formData
     });
 
-    const resultado = await resposta.json();
-    spinner.style.display = "none";
-    carregando.remove();
+    const json = await resposta.json();
 
-    if (resultado.erro) {
-      mostrarModalErro(resultado.erro);
-    } else {
-      if (resultado.analise) {
-        document.getElementById("analise").innerHTML = resultado.analise;
-      }
-      if (resultado.grafico_base64) {
-        document.getElementById("grafico").innerHTML = `<img src="data:image/png;base64,${resultado.grafico_base64}" alt="Gráfico">`;
-      }
+    if (json.grafico_isolado_base64) {
+      const novoGrafico = `
+        <div class="grafico-isolado" style="margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
+          <img src="data:image/png;base64,${json.grafico_isolado_base64}" style="max-width: 100%; border-radius: 6px;" alt="Gráfico isolado" />
+        </div>
+      `;
+      const containerGrafico = document.getElementById('grafico');
+      containerGrafico.insertAdjacentHTML('afterbegin', novoGrafico);
     }
 
-  } catch (erro) {
+    if (json.analise && json.analise.trim() !== "") {
+      const carregandoAntigo = document.getElementById('carregando-analise');
+      if (carregandoAntigo) carregandoAntigo.remove();
+
+      const parteAnalise = json.analise
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+
+      const novaAnalise = `
+        <div class="analise-completa" style="margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #ccc;">
+          <div class="analise-texto">${parteAnalise}</div>
+          ${json.grafico_base64 ? `<div class="analise-graficos"><img src="data:image/png;base64,${json.grafico_base64}" alt="Gráfico da análise" style="margin-top: 12px;" /></div>` : ""}
+        </div>
+      `;
+      containerAnalise.insertAdjacentHTML('afterbegin', novaAnalise);
+    }
+
+  } catch (error) {
+    const erroMsg = document.createElement('div');
+    erroMsg.style.color = 'red';
+    erroMsg.style.marginBottom = '12px';
+    erroMsg.textContent = `❌ Erro ao processar resposta: ${error.message}`;
+    containerAnalise.insertBefore(erroMsg, containerAnalise.firstChild);
+  } finally {
     spinner.style.display = "none";
-    carregando.remove();
-    mostrarModalErro("Erro ao enviar os dados.");
   }
 }
+
 
 
