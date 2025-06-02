@@ -1,9 +1,9 @@
-<!-- 📝 PROMPT -->
-<label for="prompt">Prompt (pergunta ou comando):</label>
-<textarea id="prompt" name="prompt" rows="4" placeholder="Escreva aqui o que deseja que o sistema faça..." required disabled></textarea>
+<!-- 🧠 PROMPT -->
+<label for="prompt">Prompt</label>
+<input type="text" id="prompt" name="prompt" disabled />
 
-<!-- 🧠 Dropdowns -->
-<div class="grupo-dropdowns" style="display: flex; gap: 10px; flex-wrap: wrap;">
+<!-- 🕽️ Dropdowns -->
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
   <!-- Ferramenta estatística -->
   <div style="flex: 1; min-width: 200px;">
     <label for="ferramenta">Ferramenta Estatística</label>
@@ -32,7 +32,8 @@
       <option value="">Selecione</option>
       <option value="boxplot_simples">Boxplot Simples</option>
       <option value="boxplot_multiplo">Boxplot Múltiplo</option>
-      <option value="boxplot_empilhado">Boxplot Empilhado</option>
+      <option value="Grafico_barras_simples">Gráfico de Barras Simples</option>
+      <option value="Grafico_barras_agrupado">Gráfico de Barras Agrupado</option>
       <option value="histograma_simples">Histograma Simples</option>
       <option value="histograma_multiplo">Histograma Múltiplo</option>
       <option value="grafico_bolhas">Gráfico de Bolhas</option>
@@ -110,5 +111,6 @@
     </select>
   </div>
 </div>
+
 
 
