@@ -1,7 +1,9 @@
 from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 import pandas as pd
 import traceback
+import os
 
 from leitura import ler_arquivo
 from suporte import interpretar_coluna
@@ -10,6 +12,10 @@ from graficos import GRAFICOS
 from agente import interpretar_analise  # ✅ Agente ativado
 
 app = FastAPI()
+
+# ✅ Tornar a pasta html_app acessível no navegador
+app.mount("/html_app", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "html_app")), name="html_app")
+
 
 @app.post("/analise")
 async def analisar(
