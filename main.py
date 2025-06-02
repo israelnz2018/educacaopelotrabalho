@@ -1,7 +1,5 @@
 from fastapi import FastAPI, File, UploadFile, Form, Request
-from fastapi.responses import JSONResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import JSONResponse
 import pandas as pd
 import traceback
 
@@ -12,15 +10,6 @@ from graficos import GRAFICOS
 from agente import interpretar_analise  # ✅ Agente ativado
 
 app = FastAPI()
-
-# ✅ Servir HTML e CSS
-app.mount("/static", StaticFiles(directory="html_app/estilos"), name="static")
-templates = Jinja2Templates(directory="html_app")
-
-@app.get("/", response_class=HTMLResponse)
-async def raiz(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
 
 @app.post("/analise")
 async def analisar(
@@ -116,6 +105,7 @@ async def analisar(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
