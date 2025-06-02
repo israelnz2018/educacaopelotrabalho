@@ -4,22 +4,21 @@
   <meta charset="UTF-8" />
   <title>Learning by Working</title>
 
-  <!-- SlimSelect -->
+  <!-- SlimSelect (Dropdown estilizado) -->
   <link href="https://cdn.jsdelivr.net/npm/slim-select@2.6.0/dist/slimselect.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/slim-select@2.6.0/dist/slimselect.min.js"></script>
 </head>
 <body>
   <div id="app"></div>
 
-  <!-- Script para carregar os 6 arquivos HTML dinamicamente -->
   <script>
     const arquivos = [
-      "Arquivo01.html", // estilo (deve ir no HEAD)
-      "Arquivo02.html",
-      "Arquivo03.html",
-      "Arquivo04.html",
-      "Arquivo05.html",
-      "Arquivo06.html"
+      "/html_app/Arquivo01.html", // estilo CSS (será injetado no head)
+      "/html_app/Arquivo02.html", // estrutura do formulário
+      "/html_app/Arquivo03.html", // scripts: enviarFormulario
+      "/html_app/Arquivo04.html", // scripts: validarChave, verificarArquivo
+      "/html_app/Arquivo05.html", // scripts: deslogar, limparMensagens
+      "/html_app/Arquivo06.html"  // scripts: validarCamposSelecionados
     ];
 
     async function carregarArquivos() {
@@ -33,18 +32,17 @@
         tempDiv.innerHTML = conteudo;
 
         Array.from(tempDiv.childNodes).forEach(node => {
-          // ✅ Estilos devem ir no <head>
-          if (node.tagName === "STYLE") {
-            document.head.appendChild(node);
-          }
-          // ✅ Scripts executáveis
-          else if (node.tagName === "SCRIPT") {
+          if (node.tagName === "SCRIPT") {
             const script = document.createElement("script");
-            script.textContent = node.textContent;
+            if (node.src) {
+              script.src = node.src;
+            } else {
+              script.textContent = node.textContent;
+            }
             document.body.appendChild(script);
-          }
-          // ✅ Conteúdo visual vai no body
-          else {
+          } else if (node.tagName === "STYLE") {
+            document.head.appendChild(node); // CSS vai no <head>
+          } else {
             container.appendChild(node);
           }
         });
@@ -55,6 +53,7 @@
   </script>
 </body>
 </html>
+
 
 
 
