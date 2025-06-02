@@ -1,3 +1,8 @@
+let sessaoAtiva = false;
+let slimSelectInstance = null;
+let inatividadeTimer = null;
+
+// Validar chave de acesso
 function validarChave() {
   const senha = document.getElementById('chave').value.trim();
   const msg = document.getElementById('mensagem-chave');
@@ -34,16 +39,16 @@ function validarChave() {
       document.getElementById('chave').required = false;
       document.getElementById('chave').disabled = true;
 
-      // SlimSelect para multi X
-      if (window.slimSelectInstance) {
-        window.slimSelectInstance.destroy();
+      // Ativa multiselect em colunas_x se SlimSelect estiver presente
+      if (typeof SlimSelect !== "undefined") {
+        if (slimSelectInstance) slimSelectInstance.destroy();
+        slimSelectInstance = new SlimSelect({
+          select: '#colunas_x',
+          settings: { closeOnSelect: false }
+        });
       }
-      window.slimSelectInstance = new SlimSelect({
-        select: '#colunas_x',
-        settings: {
-          closeOnSelect: false
-        }
-      });
+      sessaoAtiva = true;
+      iniciarContadorInatividade();
     } else {
       msg.textContent = "❌ Chave incorreta ou sem autorização.";
       msg.style.color = "red";
@@ -58,27 +63,41 @@ function validarChave() {
   });
 }
 
+// Função para deslogar usuário
 function deslogar() {
   if (!confirm("Tem certeza que deseja sair?\nTudo será apagado.")) return;
+  sessaoAtiva = false;
+  clearTimeout(inatividadeTimer);
+
   ['prompt', 'arquivo', 'enviar', 'remover', 'ferramenta', 'grafico_tipo', 'coluna_y', 'colunas_x'].forEach(id => {
-    document.getElementById(id).disabled = true;
-    if (document.getElementById(id).tagName === "SELECT" || document.getElementById(id).tagName === "INPUT") {
-      document.getElementById(id).value = '';
+    const el = document.getElementById(id);
+    if (el) {
+      el.disabled = true;
+      if (el.tagName === "SELECT" || el.tagName === "INPUT") el.value = '';
     }
   });
+
+  if (slimSelectInstance) {
+    slimSelectInstance.destroy();
+    slimSelectInstance = null;
+  }
+
   document.getElementById('sair').style.display = 'none';
   document.getElementById('mensagem-chave').textContent = '👋 Até a próxima!';
   document.getElementById('mensagem-chave').style.color = 'gray';
   document.getElementById('chave').required = true;
   document.getElementById('chave').disabled = false;
   document.getElementById('chave').value = '';
-
-  // Destroi SlimSelect ao sair
-  if (window.slimSelectInstance) {
-    window.slimSelectInstance.destroy();
-    window.slimSelectInstance = null;
-  }
 }
+
+// Inatividade: deslogar após 10 min sem uso
+function iniciarContadorInatividade() {
+  clearTimeout(inatividadeTimer);
+  inatividadeTimer = setTimeout(deslogar, 10 * 60 * 1000);
+}
+document.body.addEventListener('mousemove', iniciarContadorInatividade);
+document.body.addEventListener('keydown', iniciarContadorInatividade);
+
 
 
 
