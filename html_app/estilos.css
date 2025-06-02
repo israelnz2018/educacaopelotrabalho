@@ -6,6 +6,14 @@ body {
   color: #333;
 }
 
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
 .topo {
   display: flex;
   align-items: center;
@@ -89,4 +97,5 @@ input:disabled, select:disabled, button:disabled {
   text-align: center;
   max-width: 400px;
 }
+
 
