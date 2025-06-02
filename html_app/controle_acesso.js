@@ -38,7 +38,7 @@ function validarChave() {
       document.getElementById('chave').value = '';
       document.getElementById('chave').required = false;
       document.getElementById('chave').disabled = true;
-      // 2. Agora inicializa/reinicializa o SlimSelect SEMPRE depois de liberar!
+      // 2. (Re)inicializa o SlimSelect APÓS liberar o campo colunas_x
       if (typeof SlimSelect !== "undefined") {
         if (slimSelectInstance) slimSelectInstance.destroy();
         slimSelectInstance = new SlimSelect({
@@ -96,6 +96,7 @@ function iniciarContadorInatividade() {
 }
 document.body.addEventListener('mousemove', iniciarContadorInatividade);
 document.body.addEventListener('keydown', iniciarContadorInatividade);
+
 
 
 
