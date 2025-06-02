@@ -45,6 +45,9 @@ async function validarChave() {
       body: formData
     });
 
+    // Se a resposta não for ok, lança erro
+    if (!resposta.ok) throw new Error("Servidor não respondeu corretamente");
+
     const raw = await resposta.json();
     const data = Array.isArray(raw) ? raw : [raw];
     const itemComNome = data.find(item => item?.nome?.trim());
@@ -230,6 +233,8 @@ async function enviarFormulario(event) {
       body: formData
     });
 
+    if (!resposta.ok) throw new Error("Servidor não respondeu corretamente");
+
     const json = await resposta.json();
 
     if (json.grafico_isolado_base64) {
@@ -269,6 +274,7 @@ async function enviarFormulario(event) {
     spinner.style.display = "none";
   }
 }
+
 
 
 
