@@ -1,1 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Ferramenta Estatística</title>
+  <link rel="stylesheet" href="estilos/estilo.css">
+  <script defer src="scripts/geral.js"></script>
+</head>
+<body onmousemove="iniciarContadorInatividade()">
+
+  <!-- 🔼 LAYOUT (Logo, título, modal) -->
+  {% include "layout.html" %}
+
+  <!-- 🔐 CONTROLE DE ACESSO (chave) -->
+  {% include "controle_acesso.html" %}
+
+  <!-- 📋 FORMULÁRIO (dropdowns + upload + botões) -->
+  {% include "formulario_opcoes.html" %}
+  {% include "upload_botoes.html" %}
+
+  <!-- 📈 RESULTADOS -->
+  {% include "resultados.html" %}
+
+</body>
+</html>
 
