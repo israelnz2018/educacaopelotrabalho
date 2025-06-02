@@ -13,12 +13,12 @@
 
   <script>
     const arquivos = [
-      "/html_app/Arquivo01.html", // estilo CSS (será injetado no head)
-      "/html_app/Arquivo02.html", // estrutura do formulário
-      "/html_app/Arquivo03.html", // scripts: enviarFormulario
-      "/html_app/Arquivo04.html", // scripts: validarChave, verificarArquivo
-      "/html_app/Arquivo05.html", // scripts: deslogar, limparMensagens
-      "/html_app/Arquivo06.html"  // scripts: validarCamposSelecionados
+      "/html_app/Arquivo01.html", // estilo (irá para o <head>)
+      "/html_app/Arquivo02.html",
+      "/html_app/Arquivo03.html",
+      "/html_app/Arquivo04.html",
+      "/html_app/Arquivo05.html",
+      "/html_app/Arquivo06.html"
     ];
 
     async function carregarArquivos() {
@@ -34,16 +34,12 @@
         Array.from(tempDiv.childNodes).forEach(node => {
           if (node.tagName === "SCRIPT") {
             const script = document.createElement("script");
-            if (node.src) {
-              script.src = node.src;
-            } else {
-              script.textContent = node.textContent;
-            }
+            script.textContent = node.textContent;
             document.body.appendChild(script);
           } else if (node.tagName === "STYLE") {
-            document.head.appendChild(node); // CSS vai no <head>
+            document.head.appendChild(node); // 👉 CSS vai para o <head>
           } else {
-            container.appendChild(node);
+            container.appendChild(node);     // 👉 HTML vai para a #app
           }
         });
       }
@@ -53,6 +49,7 @@
   </script>
 </body>
 </html>
+
 
 
 
