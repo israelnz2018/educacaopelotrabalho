@@ -1,5 +1,5 @@
 from fastapi import FastAPI, File, UploadFile, Form, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import pandas as pd
 import traceback
@@ -15,6 +15,15 @@ app = FastAPI()
 
 # ✅ Tornar a pasta html_app acessível no navegador
 app.mount("/html_app", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "html_app")), name="html_app")
+
+# ✅ Rota para servir o formulário HTML na raiz "/"
+@app.get("/", response_class=HTMLResponse)
+async def raiz(request: Request):
+    caminho_index = os.path.join(os.path.dirname(__file__), "html_app", "index.html")
+    with open(caminho_index, "r", encoding="utf-8") as f:
+        return f.read()
+
+# Aqui seguem as outras rotas e funções que você já tinha, por exemplo:
 
 
 @app.post("/analise")
