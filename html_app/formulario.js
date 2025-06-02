@@ -78,7 +78,7 @@ function limparMensagensAnteriores() {
   }
 }
 
-// ✅ Validação dos campos do formulário
+// ✅ Validação dos campos do formulário (aqui não bloqueia mais o envio, só mostra o modal)
 function validarCamposSelecionados() {
   const ferramenta = document.getElementById('ferramenta').value;
   const grafico = document.getElementById('grafico_tipo').value;
@@ -87,24 +87,24 @@ function validarCamposSelecionados() {
 
   if (!ferramenta && !grafico) {
     mostrarModalErro("Escolha uma análise ou um gráfico.");
-    return false;
+    // return false;  <-- REMOVIDO para não bloquear envio
   }
 
   if (!colunaY && colunasX.length === 0) {
     mostrarModalErro("Selecione pelo menos uma coluna.");
-    return false;
+    // return false;  <-- REMOVIDO para não bloquear envio
   }
 
-  return true;
+  return true; // Sempre retorna true para permitir o envio mesmo com erros
 }
 
 // 🚀 Enviar formulário
 async function enviarFormulario(event) {
   event.preventDefault();
 
-  limparMensagensAnteriores(); // <<< ADICIONADO AQUI
+  limparMensagensAnteriores();
 
-  if (!validarCamposSelecionados()) return;
+  validarCamposSelecionados(); // mostra modal, mas não bloqueia envio
 
   const spinner = document.getElementById('spinner');
   spinner.style.display = "inline-block";
@@ -170,6 +170,7 @@ async function enviarFormulario(event) {
     spinner.style.display = "none";
   }
 }
+
 
 
 
