@@ -30,7 +30,7 @@ function validarChave() {
     if (itemComNome) {
       msg.textContent = `✅ Acesso aprovado! Bem-vindo, ${itemComNome.nome}!`;
       msg.style.color = "green";
-      // Desbloqueia campos
+      // 1. Libera TODOS os campos primeiro
       ['prompt', 'arquivo', 'enviar', 'remover', 'ferramenta', 'grafico_tipo', 'coluna_y', 'colunas_x'].forEach(id => {
         document.getElementById(id).disabled = false;
       });
@@ -38,8 +38,7 @@ function validarChave() {
       document.getElementById('chave').value = '';
       document.getElementById('chave').required = false;
       document.getElementById('chave').disabled = true;
-
-      // Ativa multiselect em colunas_x se SlimSelect estiver presente
+      // 2. Agora inicializa/reinicializa o SlimSelect SEMPRE depois de liberar!
       if (typeof SlimSelect !== "undefined") {
         if (slimSelectInstance) slimSelectInstance.destroy();
         slimSelectInstance = new SlimSelect({
@@ -97,6 +96,7 @@ function iniciarContadorInatividade() {
 }
 document.body.addEventListener('mousemove', iniciarContadorInatividade);
 document.body.addEventListener('keydown', iniciarContadorInatividade);
+
 
 
 
