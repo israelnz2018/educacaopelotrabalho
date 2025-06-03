@@ -105,7 +105,13 @@
       }
     }
 
-    
+    if (grafico === "grafico_ic_media") {
+      if (!colunaY || colunasX.length !== 1) {
+        exibirModalErro("O gráfico de IC para média requer uma coluna Y (numérica) e uma coluna X (categórica).");
+        return false;
+      }
+    }
+
     if (grafico === "Grafico_barras_agrupado") {
       if (colunasX.length !== 2) {
         exibirModalErro("Selecione exatamente duas colunas no campo X para o Gráfico de Barras Agrupado.");
