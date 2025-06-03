@@ -11,6 +11,8 @@ import statsmodels.api as sm
 from statsmodels.stats.stattools import durbin_watson
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.miscmodels.ordinal_model import OrderedModel
+from scipy.stats import chi2_contingency
+
 
 # 🧪 Testes estatísticos
 from scipy import stats
@@ -41,6 +43,61 @@ def salvar_grafico():
         img_base64 = base64.b64encode(f.read()).decode("utf-8")
     os.remove(caminho)
     return img_base64
+
+def analise_chi_quadrado(df, colunas_usadas):
+    if len(colunas_usadas) != 2:
+        raise ValueError("A análise qui-quadrado requer exatamente duas colunas categóricas.")
+
+    col_y = colunas_usadas[0]
+    col_x = colunas_usadas[1]
+
+    # Detecta se há coluna de frequência explícita
+    nome_frequencia = None
+    for nome in ["Frequência", "frequencia", "Quantidade", "quantidade", "Count", "Total"]:
+        if nome in df.columns:
+            nome_frequencia = nome
+            break
+
+    # Gera a tabela de contingência
+    if nome_frequencia:
+        tabela = df.pivot_table(index=col_x, columns=col_y, values=nome_frequencia, aggfunc="sum", fill_value=0)
+    else:
+        tabela = pd.crosstab(df[col_x], df[col_y])
+
+    # Aplica o teste
+    chi2, p, dof, expected = chi2_contingency(tabela)
+
+    # Monta o texto
+    resumo = f"""🔎 **Teste do Qui-Quadrado de Independência**
+
+Tabela de Contingência:
+{tabela.to_string()}
+
+Estatística Qui-Quadrado: {chi2:.4f}
+Graus de Liberdade: {dof}
+Valor-p: {p:.4f}
+
+"""
+
+    if p < 0.05:
+        conclusao = "❗Existe associação estatística significativa entre as variáveis (p < 0.05)."
+    else:
+        conclusao = "✅ Não há evidência estatística de associação entre as variáveis (p ≥ 0.05)."
+
+    # Gera gráfico de barras agrupadas
+    aplicar_estilo_minitab()
+    tabela.plot(kind='bar')
+    plt.title("Distribuição das Categorias")
+    plt.xlabel(col_x)
+    plt.ylabel("Frequência")
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png")
+    plt.close()
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+
+    return resumo + conclusao, imagem_base64
 
 def analise_regressao_linear_simples(df, colunas):
     colunas = [interpretar_coluna(df, c) for c in colunas]
@@ -725,7 +782,8 @@ ANALISES = {
     "teste_2sample_t": teste_2sample_t,
     "teste_paired_t": analise_teste_paired_t,
     "teste_variancias": teste_variancias,
-    "teste_anova": teste_anova
+    "teste_anova": teste_anova,
+    "analise_chi_quadrado": analise_chi_quadrado
 
 }
 
