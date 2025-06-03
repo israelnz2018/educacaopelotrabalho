@@ -98,7 +98,13 @@
       }
     }
 
-    
+    if (grafico === "grafico_pizza") {
+      if (!colunaY || colunasX.length !== 0) {
+        exibirModalErro("O gráfico de pizza requer exatamente uma coluna Y e nenhuma coluna X.");
+        return false;
+      }
+    }
+
     
     if (grafico === "Grafico_barras_agrupado") {
       if (colunasX.length !== 2) {
