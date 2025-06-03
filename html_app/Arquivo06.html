@@ -26,6 +26,13 @@
       }
     }
 
+    if (ferramenta === "analise_chi_quadrado") {
+      if (!colunaY || (colunasX.length !== 1 && colunasX.length !== 2)) {
+        exibirModalErro("O teste qui-quadrado requer uma coluna Y e uma ou duas colunas X. A segunda coluna X (opcional) será usada como frequência, se fornecida.");
+        return false;
+      }
+    }
+
     if (ferramenta === "analise_descritiva" || ferramenta === "teste_normalidade") {
       if (!colunaY) {
         const msg = ferramenta === "analise_descritiva" ? 
