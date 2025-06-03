@@ -20,9 +20,11 @@ def salvar_grafico():
     os.remove(caminho)
     return img_base64
 
-def grafico_bolhas(df, colunas_usadas):
-    if len(colunas_usadas) < 3:
-        raise ValueError("O Gráfico de Bolhas requer três colunas: X, Y e Tamanho.")
+def grafico_bolhas(df, coluna_y=None, colunas_x=None):
+    if not coluna_y or not colunas_x or len(colunas_x) != 2:
+        raise ValueError("O Gráfico de Bolhas requer uma coluna Y e duas colunas X (X e Tamanho).")
+
+    colunas_usadas = [colunas_x[0], coluna_y, colunas_x[1]]
 
     nome_x = interpretar_coluna(df, colunas_usadas[0])
     nome_y = interpretar_coluna(df, colunas_usadas[1])
