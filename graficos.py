@@ -22,27 +22,25 @@ def salvar_grafico():
 
 def grafico_ic_media(df, colunas_usadas, coluna_y=None):
     if len(colunas_usadas) != 2:
-        raise ValueError("O gráfico de intervalos requer uma coluna categórica (X) e uma numérica (Y).")
+        raise ValueError("O gráfico de intervalos requer uma coluna Y (numérica) e uma coluna X (categórica).")
 
-    nome_x = colunas_usadas[0]
-    nome_y = colunas_usadas[1]
+    nome_y = colunas_usadas[0]  # ✅ Agora Y vem primeiro
+    nome_x = colunas_usadas[1]
 
-    # Força conversão da coluna Y para numérica
+    # Força conversão da coluna Y para numérico
     df[nome_y] = pd.to_numeric(df[nome_y], errors="coerce")
     if df[nome_y].isnull().all():
         raise ValueError(f"A coluna '{nome_y}' não contém valores numéricos válidos para calcular a média.")
 
     aplicar_estilo_minitab()
 
-    # Agrupamento e cálculo de médias e intervalos
     grupos = df.groupby(nome_x)[nome_y]
     medias = grupos.mean()
     desvios = grupos.std()
     n = grupos.count()
     erro_padrao = desvios / n**0.5
-    intervalo = 1.96 * erro_padrao  # z-score para IC 95%
+    intervalo = 1.96 * erro_padrao
 
-    # Geração do gráfico
     plt.figure(figsize=(8, 6))
     plt.errorbar(
         x=medias.index,
@@ -65,6 +63,7 @@ def grafico_ic_media(df, colunas_usadas, coluna_y=None):
     buffer.seek(0)
     imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
     return imagem_base64
+
 
 
 def grafico_pizza(df, colunas_usadas, coluna_y=None):
