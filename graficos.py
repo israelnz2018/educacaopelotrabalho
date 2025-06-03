@@ -24,8 +24,10 @@ def grafico_bolhas(df, coluna_y=None, colunas_x=None):
     if not coluna_y or not colunas_x or len(colunas_x) != 2:
         raise ValueError("O Gráfico de Bolhas requer uma coluna Y e duas colunas X (X e Tamanho).")
 
+    # Define a ordem correta das colunas: X, Y, Tamanho
     colunas_usadas = [colunas_x[0], coluna_y, colunas_x[1]]
 
+    # Converte letras (ex: "A", "B") para nomes reais das colunas
     nome_x = interpretar_coluna(df, colunas_usadas[0])
     nome_y = interpretar_coluna(df, colunas_usadas[1])
     nome_tamanho = interpretar_coluna(df, colunas_usadas[2])
