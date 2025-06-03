@@ -45,29 +45,30 @@ def salvar_grafico():
     return img_base64
 
 def analise_chi_quadrado(df, colunas_usadas):
-    if len(colunas_usadas) != 2:
-        raise ValueError("A análise qui-quadrado requer exatamente duas colunas categóricas.")
+    if len(colunas_usadas) < 2:
+        raise ValueError("O teste qui-quadrado requer pelo menos duas colunas: uma Y e uma X.")
 
     col_y = colunas_usadas[0]
     col_x = colunas_usadas[1]
+    col_freq = colunas_usadas[2] if len(colunas_usadas) >= 3 else None
 
-    # Detecta se há coluna de frequência explícita
-    nome_frequencia = None
-    for nome in ["Frequência", "frequencia", "Quantidade", "quantidade", "Count", "Total"]:
-        if nome in df.columns:
-            nome_frequencia = nome
-            break
-
-    # Gera a tabela de contingência
-    if nome_frequencia:
-        tabela = df.pivot_table(index=col_x, columns=col_y, values=nome_frequencia, aggfunc="sum", fill_value=0)
+    # Se o aluno forneceu a coluna de frequência explicitamente
+    if col_freq and col_freq in df.columns:
+        tabela = df.pivot_table(
+            index=col_x,
+            columns=col_y,
+            values=col_freq,
+            aggfunc="sum",
+            fill_value=0
+        )
     else:
+        # Dados linha a linha
         tabela = pd.crosstab(df[col_x], df[col_y])
 
     # Aplica o teste
     chi2, p, dof, expected = chi2_contingency(tabela)
 
-    # Monta o texto
+    # Monta a interpretação
     resumo = f"""🔎 **Teste do Qui-Quadrado de Independência**
 
 Tabela de Contingência:
@@ -84,7 +85,7 @@ Valor-p: {p:.4f}
     else:
         conclusao = "✅ Não há evidência estatística de associação entre as variáveis (p ≥ 0.05)."
 
-    # Gera gráfico de barras agrupadas
+    # Gráfico de barras agrupadas
     aplicar_estilo_minitab()
     tabela.plot(kind='bar')
     plt.title("Distribuição das Categorias")
