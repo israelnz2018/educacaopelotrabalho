@@ -20,6 +20,32 @@ def salvar_grafico():
     os.remove(caminho)
     return img_base64
 
+def grafico_pizza(df, colunas_usadas, coluna_y=None):
+    if len(colunas_usadas) != 1:
+        raise ValueError("O Gráfico de Pizza requer exatamente 1 coluna categórica ou discreta.")
+
+    nome_coluna = colunas_usadas[0]
+    dados = df[nome_coluna].value_counts()
+
+    aplicar_estilo_minitab()
+
+    plt.figure(figsize=(8, 8))
+    plt.pie(
+        dados.values,
+        labels=dados.index,
+        autopct='%1.1f%%',
+        startangle=140,
+        textprops={'fontsize': 12}
+    )
+    plt.title(f"Distribuição de {nome_coluna}", fontsize=14)
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    plt.close()
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    return imagem_base64
+
 def grafico_bolhas(df, colunas_usadas, coluna_y=None):
     if len(colunas_usadas) != 3:
         raise ValueError("O Gráfico de Bolhas requer 3 colunas: X, Y e Tamanho.")
@@ -311,7 +337,8 @@ GRAFICOS = {
     "histograma_multiplo": grafico_histograma_multiplo,
     "grafico_barras_simples": grafico_barras_simples,
     "Grafico_barras_agrupado": grafico_barras_agrupado,
-    "grafico_bolhas": grafico_bolhas  # ✅ Correto: apenas referência à função
+    "grafico_bolhas": grafico_bolhas,
+    "grafico_pizza": grafico_pizza
 
 }
 
