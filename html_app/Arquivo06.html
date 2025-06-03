@@ -112,6 +112,13 @@
       }
     }
 
+    if (grafico === "grafico_linha_temporal") {
+      if (!colunaY || colunasX.length !== 1) {
+        exibirModalErro("O gráfico de série temporal requer uma coluna Y (numérica) e uma coluna X (datas, períodos ou números).");
+        return false;
+      }
+    }
+
     if (grafico === "Grafico_barras_agrupado") {
       if (colunasX.length !== 2) {
         exibirModalErro("Selecione exatamente duas colunas no campo X para o Gráfico de Barras Agrupado.");
