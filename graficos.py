@@ -20,6 +20,47 @@ def salvar_grafico():
     os.remove(caminho)
     return img_base64
 
+def grafico_ic_media(df, colunas_usadas, coluna_y=None):
+    if len(colunas_usadas) != 2:
+        raise ValueError("O gráfico de IC para média requer uma coluna categórica (X) e uma numérica (Y).")
+
+    nome_x = colunas_usadas[0]
+    nome_y = colunas_usadas[1]
+
+    aplicar_estilo_minitab()
+
+    # Calcula média e intervalo de confiança 95%
+    grupos = df.groupby(nome_x)[nome_y]
+    medias = grupos.mean()
+    desvios = grupos.std()
+    n = grupos.count()
+    erro_padrao = desvios / n**0.5
+    intervalo = 1.96 * erro_padrao  # z-score para IC 95%
+
+    plt.figure(figsize=(8, 6))
+    plt.errorbar(
+        x=medias.index,
+        y=medias.values,
+        yerr=intervalo.values,
+        fmt='o',
+        capsize=6,
+        elinewidth=2,
+        marker='o',
+        color='midnightblue'
+    )
+
+    plt.title("Gráfico de Intervalos de Confiança (IC 95%) para a Média")
+    plt.xlabel(nome_x)
+    plt.ylabel(nome_y)
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png")
+    plt.close()
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+    return imagem_base64
+
+
 def grafico_pizza(df, colunas_usadas, coluna_y=None):
     if len(colunas_usadas) != 1:
         raise ValueError("O Gráfico de Pizza requer exatamente 1 coluna categórica ou discreta.")
@@ -338,7 +379,8 @@ GRAFICOS = {
     "grafico_barras_simples": grafico_barras_simples,
     "Grafico_barras_agrupado": grafico_barras_agrupado,
     "grafico_bolhas": grafico_bolhas,
-    "grafico_pizza": grafico_pizza
+    "grafico_pizza": grafico_pizza,
+    "grafico_ic_media": grafico_ic_media
 
 }
 
