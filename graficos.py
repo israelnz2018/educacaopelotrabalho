@@ -20,6 +20,48 @@ def salvar_grafico():
     os.remove(caminho)
     return img_base64
 
+def grafico_linha_temporal(df, colunas_usadas, coluna_y=None):
+    if len(colunas_usadas) != 2:
+        raise ValueError("O gráfico de série temporal requer duas colunas: X (datas/períodos) e Y (valores numéricos).")
+
+    nome_x = colunas_usadas[1]  # X (tempo)
+    nome_y = colunas_usadas[0]  # Y (valor)
+
+    # Força conversão da coluna Y para numérico
+    df[nome_y] = pd.to_numeric(df[nome_y], errors="coerce")
+    if df[nome_y].isnull().all():
+        raise ValueError(f"A coluna '{nome_y}' não contém valores numéricos válidos.")
+
+    # Tenta converter X para datetime (se possível)
+    try:
+        df[nome_x] = pd.to_datetime(df[nome_x], errors='coerce')
+    except Exception:
+        pass
+
+    # Verifica se ao menos parte das datas foram entendidas
+    if df[nome_x].isnull().all():
+        raise ValueError(f"A coluna '{nome_x}' não contém datas ou períodos válidos para série temporal.")
+
+    # Ordena pela coluna X (tempo)
+    df = df.sort_values(by=nome_x)
+
+    aplicar_estilo_minitab()
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(df[nome_x], df[nome_y], color='blue', marker='o', markerfacecolor='red')
+    plt.xlabel(nome_x)
+    plt.ylabel(nome_y)
+    plt.title("Gráfico de Série Temporal")
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png")
+    plt.close()
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+    return imagem_base64
+
+
+
 def grafico_ic_media(df, colunas_usadas, coluna_y=None):
     if len(colunas_usadas) != 2:
         raise ValueError("O gráfico de intervalos requer uma coluna Y (numérica) e uma coluna X (categórica).")
@@ -385,7 +427,9 @@ GRAFICOS = {
     "Grafico_barras_agrupado": grafico_barras_agrupado,
     "grafico_bolhas": grafico_bolhas,
     "grafico_pizza": grafico_pizza,
-    "grafico_ic_media": grafico_ic_media
+    "grafico_ic_media": grafico_ic_media,
+    "grafico_linha_temporal": grafico_linha_temporal
+
 
 }
 
