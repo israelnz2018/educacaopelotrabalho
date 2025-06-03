@@ -58,6 +58,14 @@
       }
     }
 
+    if (ferramenta === "analise_chi_quadrado") {
+      if (!colunaY || colunasX.length !== 1) {
+        exibirModalErro("O teste qui-quadrado requer uma coluna Y e uma coluna X, ambas categóricas.");
+        return false;
+      }
+    }
+
+
     if (["teste_2sample_t", "teste_paired_t", "teste_variancias"].includes(ferramenta)) {
       if (colunaY) {
         exibirModalErro(`Não selecione a coluna Y para o ${ferramenta.replace(/_/g, " ").toUpperCase()}.`);
