@@ -6,9 +6,9 @@ import base64
 import os
 import io
 from io import BytesIO
-
-
 from estilo import aplicar_estilo_minitab
+from suporte import interpretar_coluna
+
 
 def salvar_grafico():
     caminho = "grafico.png"
@@ -19,6 +19,38 @@ def salvar_grafico():
         img_base64 = base64.b64encode(f.read()).decode("utf-8")
     os.remove(caminho)
     return img_base64
+
+def grafico_bolhas(df, colunas_usadas):
+    if len(colunas_usadas) < 3:
+        raise ValueError("O Gráfico de Bolhas requer três colunas: X, Y e Tamanho.")
+
+    nome_x = interpretar_coluna(df, colunas_usadas[0])
+    nome_y = interpretar_coluna(df, colunas_usadas[1])
+    nome_tamanho = interpretar_coluna(df, colunas_usadas[2])
+
+    aplicar_estilo_minitab()
+
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(
+        data=df,
+        x=nome_x,
+        y=nome_y,
+        size=nome_tamanho,
+        sizes=(50, 800),
+        legend=False,
+        alpha=0.6
+    )
+
+    plt.xlabel(nome_x)
+    plt.ylabel(nome_y)
+    plt.title("Gráfico de Bolhas")
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    plt.close()
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    return imagem_base64
 
 def grafico_dispersao(df, colunas):
     if len(colunas) < 2:
