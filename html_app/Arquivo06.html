@@ -135,7 +135,8 @@
     }
 
     if (ferramenta === "capabilidade_normal") {
-      if (!colunaY || colunasX.length !== 1) {
+      const colunasX = slimSelectInstance ? slimSelectInstance.getSelected() : [];
+      if (!colunaY || !Array.isArray(colunasX) || colunasX.length !== 1) {
         exibirModalErro("Para Capabilidade Normal, selecione uma coluna de dados (Y) e apenas uma coluna com os limites de especificação (X).");
         return false;
       }
