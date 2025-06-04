@@ -198,20 +198,27 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
 
     normal_shapiro = p_shapiro > 0.05
     normal_kstest = p_kstest > 0.05
-    normal_anderson = stat_ad < 0.6810  # Valor crítico 5% do Anderson-Darling
+    normal_anderson = stat_ad < 0.6810
 
-    texto = f"""📊 **Análise de Capabilidade (Dados Não Normais)**
-
-📌 **Teste de Normalidade**
-- Shapiro-Wilk: estatística = {stat_shapiro:.4f}, p = {p_shapiro:.4f}
-- Kolmogorov-Smirnov: estatística = {stat_kstest:.4f}, p = {p_kstest:.4f}
-- Anderson-Darling: estatística = {stat_ad:.4f}, limiar crítico = 0.6810"""
+    texto = f"""📊 **Análise de Capabilidade (Dados Não Normais)**\n\n📌 **Teste de Normalidade**\n- Shapiro-Wilk: estatística = {stat_shapiro:.4f}, p = {p_shapiro:.4f}\n- Kolmogorov-Smirnov: estatística = {stat_kstest:.4f}, p = {p_kstest:.4f}\n- Anderson-Darling: estatística = {stat_ad:.4f}, limiar crítico = 0.6810"""
 
     if normal_shapiro or normal_kstest or normal_anderson:
         texto += "\n\n✅ **Dados considerados normais com base em pelo menos um teste. Recomendação: utilize a análise de capabilidade normal.**"
         return texto, None
 
-    # ⚙️ Capabilidade com dados não normais
+    # ➕ Tenta ajuste de distribuições alternativas
+    texto_dist, imagem_dist, melhor_distribuicao = ajustar_distribuicoes_alternativas(dados, lsl, usl)
+    if melhor_distribuicao:
+        texto += "\n\n📈 **Distribuição Alternativa Ajustada**\n" + texto_dist
+        return texto, imagem_dist
+
+    # 🔁 Tenta transformação Johnson se nenhuma distribuição alternativa for adequada
+    texto_johnson, imagem_johnson, sucesso = aplicar_transformacao_johnson(dados, lsl, usl)
+    if sucesso:
+        texto += "\n\n🔁 **Transformação Johnson aplicada com sucesso**\n" + texto_johnson
+        return texto, imagem_johnson
+
+    # ❌ Nenhuma alternativa funcionou: faz análise mesmo assim
     ppl = ppu = pp = ppk = None
     if lsl is not None:
         ppl = (media - lsl) / (3 * desvio_padrao_amostral)
@@ -240,7 +247,6 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
     if sigma_nivel is not None:
         texto += f"\n- Nível Sigma estimado: {sigma_nivel:.4f}"
 
-    # 📈 Gráfico
     aplicar_estilo_minitab()
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.hist(dados, bins=15, color="#A6CEE3", edgecolor='black', alpha=0.9, density=True)
@@ -254,7 +260,6 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
         ax.axvline(lsl, color='maroon', linestyle='--', linewidth=1.5)
     if usl is not None:
         ax.axvline(usl, color='maroon', linestyle='--', linewidth=1.5)
-
     ax.axvline(media, color='darkgreen', linestyle='-', linewidth=2)
     ax.text(media, max(p) * 1.05, "Média", ha='center', fontsize=10, color='darkgreen')
 
@@ -269,7 +274,9 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
     imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
     plt.close()
 
+    texto += "\n\n⚠️ Nenhuma distribuição alternativa se ajustou bem e a transformação também falhou. Os resultados abaixo são baseados nos dados originais, com possível imprecisão."
     return texto, imagem_base64
+
 
 
 def analise_chi_quadrado(df, colunas_usadas):
