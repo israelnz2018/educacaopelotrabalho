@@ -134,6 +134,13 @@
       }
     }
 
+    if (ferramenta === "capabilidade_normal") {
+      if (!colunaY || !colunaX) {
+        exibirModalErro("Para Capabilidade Normal, selecione uma coluna de dados (Y) e uma coluna com os limites de especificação (X).");
+        return false;
+      }
+    }
+
     if (grafico === "Grafico_barras_agrupado") {
       if (colunasX.length !== 2) {
         exibirModalErro("Selecione exatamente duas colunas no campo X para o Gráfico de Barras Agrupado.");
