@@ -166,13 +166,7 @@ Recomenda-se utilizar a **Análise de Capabilidade para Dados Não Normais**."""
         "colunas_utilizadas": colunas_usadas
     }
 
-from io import BytesIO
-import matplotlib.pyplot as plt
-import numpy as np
-import base64
-from scipy.stats import shapiro, kstest, norm
-from statsmodels.stats.diagnostic import normal_ad
-from .estilo import aplicar_estilo_minitab
+
 
 def analise_capabilidade_nao_normal(df, colunas_usadas):
     nome_coluna_y = colunas_usadas[0]
