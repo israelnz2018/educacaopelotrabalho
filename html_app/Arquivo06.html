@@ -151,6 +151,15 @@
     }
 
 
+
+    if (ferramenta === "transformacao_johnson") {
+      if (!colunaY || colunasX.length !== 1) {
+        exibirModalErro("Para Transformação Johnson, selecione uma coluna de dados (Y) e uma coluna com 1 ou 2 valores numéricos em X.");
+        return false;
+      }
+    }
+
+    
     if (grafico === "Grafico_barras_agrupado") {
       if (colunasX.length !== 2) {
         exibirModalErro("Selecione exatamente duas colunas no campo X para o Gráfico de Barras Agrupado.");
