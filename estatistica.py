@@ -191,15 +191,16 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
     desvio_padrao_amostral = np.std(dados, ddof=1)
 
     # Teste de normalidade (3 métodos)
-    stat_shapiro, p_shapiro = shapiro(dados)
-    stat_kstest, p_kstest = kstest(dados, 'norm', args=(media, desvio_padrao_amostral))
-    stat_ad = normal_ad(dados)
+stat_shapiro, p_shapiro = shapiro(dados)
+stat_kstest, p_kstest = kstest(dados, 'norm', args=(media, desvio_padrao_amostral))
+resultado_ad = anderson(dados)
+stat_ad = resultado_ad.statistic
 
-    normal_shapiro = p_shapiro > 0.05
-    normal_kstest = p_kstest > 0.05
-    normal_anderson = stat_ad < 0.6810  # Valor crítico 5% do Anderson-Darling
+normal_shapiro = p_shapiro > 0.05
+normal_kstest = p_kstest > 0.05
+normal_anderson = stat_ad < 0.6810  # Valor crítico 5% do Anderson-Darling
 
-    texto = f"""📊 **Análise de Capabilidade (Dados Não Normais)**
+texto = f"""📊 **Análise de Capabilidade (Dados Não Normais)**
 
 📌 **Teste de Normalidade**
 - Shapiro-Wilk: estatística = {stat_shapiro:.4f}, p = {p_shapiro:.4f}
@@ -209,6 +210,7 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
     if normal_shapiro or normal_kstest or normal_anderson:
         texto += "\n\n✅ **Dados considerados normais com base em pelo menos um teste. Recomendação: utilize a análise de capabilidade normal.**"
         return texto, None
+
 
     # Capabilidade com dados não normais
     ppl = ppu = pp = ppk = None
