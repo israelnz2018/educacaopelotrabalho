@@ -166,174 +166,116 @@ Recomenda-se utilizar a **Análise de Capabilidade para Dados Não Normais**."""
         "colunas_utilizadas": colunas_usadas
     }
 
+from io import BytesIO
+import matplotlib.pyplot as plt
+import numpy as np
+import base64
+from scipy.stats import shapiro, kstest, norm
+from statsmodels.stats.diagnostic import normal_ad
+from .estilo import aplicar_estilo_minitab
+
 def analise_capabilidade_nao_normal(df, colunas_usadas):
-    
     nome_coluna_y = colunas_usadas[0]
     nome_coluna_x = colunas_usadas[1]
 
-    dados = df[nome_coluna_y].dropna().astype(float).values
-    limites = df[nome_coluna_x].dropna().astype(float).values
+    dados = df[nome_coluna_y].dropna().astype(float)
+    limites = df[nome_coluna_x].dropna().unique()
 
-    if len(limites) < 1:
-        return {"erro": "Coluna de limites vazia."}
+    if len(limites) < 1 or len(limites) > 2:
+        raise ValueError("A coluna de limites deve conter um ou dois valores numéricos (LSL e/ou USL).")
 
-    # Detectar LSL e USL
-    LSL = None
-    USL = None
-    if len(limites) == 1:
-        # Tentar inferir posição
-        if nome_coluna_x in df.columns and not pd.isna(df[nome_coluna_x].iloc[1]):
-            LSL = limites[0]
+    lsl = usl = None
+    if len(limites) == 2:
+        lsl, usl = sorted(limites)
+    elif len(limites) == 1:
+        if df[nome_coluna_x].iloc[1] != '':
+            lsl = limites[0]
         else:
-            USL = limites[0]
-    elif len(limites) >= 2:
-        LSL, USL = sorted(limites[:2])  # ordem crescente
+            usl = limites[0]
 
-    resultados = []
-    graficos = []
+    media = np.mean(dados)
+    desvio_padrao_amostral = np.std(dados, ddof=1)
 
-    # 🧪 TESTES DE NORMALIDADE
-    shapiro_stat, shapiro_p = stats.shapiro(dados)
-    ad_stat, ad_critico, _ = normal_ad(dados, dist='norm')
-    ks_stat, ks_p = stats.kstest(dados, 'norm', args=(np.mean(dados), np.std(dados)))
+    # Teste de normalidade (3 métodos)
+    stat_shapiro, p_shapiro = shapiro(dados)
+    stat_kstest, p_kstest = kstest(dados, 'norm', args=(media, desvio_padrao_amostral))
+    stat_ad = normal_ad(dados)
 
-    resultados.append(f"🔹 Shapiro-Wilk: Estatística = {shapiro_stat:.4f}, p = {shapiro_p:.4f} → {'✅' if shapiro_p > 0.05 else '❌'} Dados {'normais' if shapiro_p > 0.05 else 'não normais'}")
-    resultados.append(f"🔹 Anderson-Darling: Estatística = {ad_stat:.4f}, Limite Crítico (5%) = {ad_critico:.4f} → {'✅' if ad_stat <= ad_critico else '❌'} Dados {'normais' if ad_stat <= ad_critico else 'não normais'}")
-    resultados.append(f"🔹 Kolmogorov-Smirnov: Estatística = {ks_stat:.4f}, p = {ks_p:.4f} → {'✅' if ks_p > 0.05 else '❌'} Dados {'normais' if ks_p > 0.05 else 'não normais'}")
+    normal_shapiro = p_shapiro > 0.05
+    normal_kstest = p_kstest > 0.05
+    normal_anderson = stat_ad < 0.6810  # Valor crítico 5% do Anderson-Darling
 
-    if shapiro_p > 0.05 or ad_stat <= ad_critico or ks_p > 0.05:
-        resultados.append("\n✅ Os dados são normais. Use a análise de Capabilidade Normal.")
-        return {
-            "analise": "\n".join(resultados),
-            "graficos": [],
-            "colunas_utilizadas": colunas_usadas
-        }
+    texto = f"""📊 **Análise de Capabilidade (Dados Não Normais)**
 
-    resultados.append("\n❌ Os dados NÃO são normais. Iniciando análise para capabilidade não normal.")
+📌 **Teste de Normalidade**
+- Shapiro-Wilk: estatística = {stat_shapiro:.4f}, p = {p_shapiro:.4f}
+- Kolmogorov-Smirnov: estatística = {stat_kstest:.4f}, p = {p_kstest:.4f}
+- Anderson-Darling: estatística = {stat_ad:.4f}, limiar crítico = 0.6810"""
 
-    # 🔍 Testar distribuições alternativas
-    distribuicoes = {
-        "Lognormal": stats.lognorm,
-        "Weibull": stats.weibull_min,
-        "Exponencial": stats.expon,
-        "Gama": stats.gamma
-    }
+    if normal_shapiro or normal_kstest or normal_anderson:
+        texto += "\n\n✅ **Dados considerados normais com base em pelo menos um teste. Recomendação: utilize a análise de capabilidade normal.**"
+        return texto, None
 
-    melhor_p = -1
-    melhor_nome = None
-    melhor_dist = None
-    melhores_params = None
+    # Capabilidade com dados não normais
+    ppl = ppu = pp = ppk = None
+    if lsl is not None:
+        ppl = (media - lsl) / (3 * desvio_padrao_amostral)
+    if usl is not None:
+        ppu = (usl - media) / (3 * desvio_padrao_amostral)
 
-    for nome, dist in distribuicoes.items():
-        try:
-            params = dist.fit(dados)
-            stat, p = stats.kstest(dados, dist.name, args=params)
-            resultados.append(f"🔹 {nome}: p = {p:.4f}")
-            if p > melhor_p:
-                melhor_p = p
-                melhor_nome = nome
-                melhor_dist = dist
-                melhores_params = params
-        except:
-            continue
+    if ppl is not None and ppu is not None:
+        pp = (usl - lsl) / (6 * desvio_padrao_amostral)
+        ppk = min(ppl, ppu)
+    elif ppl is not None:
+        ppk = ppl
+    elif ppu is not None:
+        ppk = ppu
 
-    if melhor_p > 0.05:
-        resultados.append(f"\n✅ Melhor ajuste: {melhor_nome} (p = {melhor_p:.4f})")
+    sigma_nivel = 3 * ppk if ppk is not None else None
 
-        # Capabilidade com base na curva ajustada
-        y = melhor_dist(*melhores_params)
-        media = y.mean()
-        desvio = y.std()
+    texto += f"\n\n📌 **Resultados de Capabilidade**\n- Média: {media:.4f}\n- Desvio Padrão: {desvio_padrao_amostral:.4f}"
 
-        cpk = None
-        ppk = None
-        if LSL is not None and USL is not None:
-            cpk = min((USL - media) / (3 * desvio), (media - LSL) / (3 * desvio))
-            ppk = cpk
-        elif LSL is not None:
-            cpk = (media - LSL) / (3 * desvio)
-            ppk = cpk
-        elif USL is not None:
-            cpk = (USL - media) / (3 * desvio)
-            ppk = cpk
+    if lsl is not None:
+        texto += f"\n- LSL: {lsl:.4f}"
+    if usl is not None:
+        texto += f"\n- USL: {usl:.4f}"
+    if pp is not None:
+        texto += f"\n- Pp: {pp:.4f}"
+    if ppk is not None:
+        texto += f"\n- Ppk: {ppk:.4f}"
+    if sigma_nivel is not None:
+        texto += f"\n- Nível Sigma estimado: {sigma_nivel:.4f}"
 
-        if cpk:
-            resultados.append(f"✅ Cpk ≈ {cpk:.2f}")
-            resultados.append(f"✅ Ppk ≈ {ppk:.2f}")
+    # 📈 Gráfico
+    aplicar_estilo_minitab()
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.hist(dados, bins=15, color="#A6CEE3", edgecolor='black', alpha=0.9, density=True)
 
-        # Gráfico estilo Minitab
-        fig, ax = plt.subplots(figsize=(8, 4))
-        aplicar_estilo_minitab()
-        x_plot = np.linspace(min(dados), max(dados), 100)
-        ax.hist(dados, bins=12, density=True, alpha=0.6, label="Dados")
-        ax.plot(x_plot, y.pdf(x_plot), label=f"Curva {melhor_nome}")
-        if LSL: ax.axvline(LSL, color='red', linestyle='--', label="LSL")
-        if USL: ax.axvline(USL, color='red', linestyle='--', label="USL")
-        ax.set_title("Distribuição Ajustada e Limites")
-        ax.legend()
+    xmin, xmax = ax.get_xlim()
+    x = np.linspace(xmin, xmax, 500)
+    p = norm.pdf(x, media, desvio_padrao_amostral)
+    ax.plot(x, p, 'darkred', linewidth=2)
 
-        buf = io.BytesIO()
-        plt.tight_layout()
-        plt.savefig(buf, format="png")
-        buf.seek(0)
-        imagem_base64 = base64.b64encode(buf.read()).decode("utf-8")
-        graficos.append(imagem_base64)
-        plt.close()
+    if lsl is not None:
+        ax.axvline(lsl, color='maroon', linestyle='--', linewidth=1.5)
+    if usl is not None:
+        ax.axvline(usl, color='maroon', linestyle='--', linewidth=1.5)
+    ax.axvline(media, color='darkgreen', linestyle='-', linewidth=2)
+    ax.text(media, max(p) * 1.05, "Média", ha='center', fontsize=10, color='darkgreen')
 
-    else:
-        resultados.append("\n⚠️ Nenhuma distribuição se ajustou bem. Tentando Johnson Transformation...")
+    ax.set_title('Capabilidade do Processo (Não Normal)', fontsize=14, weight='bold')
+    ax.set_xlabel(nome_coluna_y)
+    ax.set_ylabel('Densidade')
+    plt.tight_layout()
 
-        # ⚙️ Johnson transformation com zscore + np.log + normalização
-        try:
-            z = (dados - np.mean(dados)) / np.std(dados)
-            transformados = np.log(z - min(z) + 1.1)
-            stat, p = stats.shapiro(transformados)
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    plt.close()
 
-            if p > 0.05:
-                resultados.append("✅ Transformação Johnson aplicada com sucesso.")
-                media_t = np.mean(transformados)
-                std_t = np.std(transformados)
+    return texto, imagem_base64
 
-                if LSL:
-                    z_lsl = (LSL - media_t) / std_t
-                if USL:
-                    z_usl = (USL - media_t) / std_t
-
-                cpk = None
-                if LSL and USL:
-                    cpk = min((USL - media_t) / (3 * std_t), (media_t - LSL) / (3 * std_t))
-                elif LSL:
-                    cpk = (media_t - LSL) / (3 * std_t)
-                elif USL:
-                    cpk = (USL - media_t) / (3 * std_t)
-
-                if cpk:
-                    resultados.append(f"✅ Cpk ≈ {cpk:.2f} (baseado em dados transformados)")
-
-            else:
-                raise Exception("Transformação falhou")
-
-        except:
-            resultados.append("❌ Transformação Johnson falhou. Calculando % de defeitos diretamente.")
-
-            total = len(dados)
-            fora = 0
-            if LSL:
-                fora += sum(dados < LSL)
-            if USL:
-                fora += sum(dados > USL)
-
-            pct_defeitos = (fora / total) * 100
-            sigma_estimado = 2 + (100 - pct_defeitos) / 6  # Aproximação
-
-            resultados.append(f"📌 % de produtos fora da especificação: {pct_defeitos:.2f}%")
-            resultados.append(f"📌 Nível sigma estimado: {sigma_estimado:.2f}")
-
-    return {
-        "analise": "\n".join(resultados),
-        "graficos": graficos,
-        "colunas_utilizadas": colunas_usadas
-    }
 
 
 
