@@ -125,6 +125,175 @@ def analise_capabilidade_normal(df, colunas_usadas):
 
     return texto, imagem_base64
 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.stats import anderson, shapiro, kstest, norm
+from sklearn.preprocessing import PowerTransformer
+from io import BytesIO
+import base64
+
+from estilo import aplicar_estilo_minitab
+
+def analise_capabilidade_nao_normal(df, colunas_usadas):
+    nome_coluna_y = colunas_usadas[0]
+    nome_coluna_x = colunas_usadas[1]
+
+    dados = df[nome_coluna_y].dropna().astype(float)
+    limites = df[nome_coluna_x].dropna().unique()
+
+    if len(limites) != 2:
+        raise ValueError("A coluna de limites deve conter exatamente dois valores numéricos (LSL e USL).")
+
+    lsl, usl = sorted(limites)
+    media = np.mean(dados)
+    desvio_padrao = np.std(dados, ddof=1)
+    n = len(dados)
+
+    # Testes de normalidade
+    ad_stat, ad_crit, _ = anderson(dados)
+    shapiro_stat, shapiro_p = shapiro(dados)
+    ks_stat, ks_p = kstest(dados, 'norm', args=(media, desvio_padrao))
+
+    normal_ad = ad_stat < ad_crit[2]
+    normal_shapiro = shapiro_p > 0.05
+    normal_ks = ks_p > 0.05
+    normal = normal_ad and normal_shapiro and normal_ks
+
+    texto = f"""📊 **Análise de Capabilidade – Dados Não Normais**
+
+🔎 **Testes de Normalidade:**
+- Anderson-Darling: estatística = {ad_stat:.4f} | 5% critério = {ad_crit[2]:.4f} → {"✅" if normal_ad else "❌"}
+- Shapiro-Wilk: p = {shapiro_p:.4f} → {"✅" if normal_shapiro else "❌"}
+- Kolmogorov-Smirnov: p = {ks_p:.4f} → {"✅" if normal_ks else "❌"}
+
+🧠 Resultado: Dados {"normais ✅" if normal else "não normais ❌"}
+
+"""
+
+    if normal:
+        texto += "⚠️ Os dados são normais. Use a ferramenta **Capabilidade Normal**.\n"
+        return texto, None
+
+    # Estabilidade do processo – simples
+    ucl = media + 3 * desvio_padrao
+    lcl = media - 3 * desvio_padrao
+    instavel = ((dados > ucl) | (dados < lcl)).any()
+    texto += f"\n📈 **Estabilidade do Processo:** {'⚠️ Instável' if instavel else '✅ Estável'}\n"
+
+    # Outliers via IQR
+    q1, q3 = np.percentile(dados, [25, 75])
+    iqr = q3 - q1
+    limite_inf = q1 - 1.5 * iqr
+    limite_sup = q3 + 1.5 * iqr
+    outliers = dados[(dados < limite_inf) | (dados > limite_sup)]
+    texto += f"🚨 **Outliers (IQR):** {len(outliers)} valores fora de [{limite_inf:.2f}, {limite_sup:.2f}]\n"
+
+    # Teste de distribuições
+    distribuicoes = {
+        "Lognormal": stats.lognorm,
+        "Weibull": stats.weibull_min,
+        "Exponencial": stats.expon,
+        "Gama": stats.gamma
+    }
+
+    melhores = []
+    for nome, dist in distribuicoes.items():
+        try:
+            params = dist.fit(dados)
+            D, p_valor = kstest(dados, dist.name, args=params)
+            melhores.append((nome, p_valor, dist, params))
+        except Exception:
+            continue
+
+    melhores.sort(key=lambda x: x[1], reverse=True)
+
+    if melhores and melhores[0][1] > 0.05:
+        nome, p, dist, params = melhores[0]
+        texto += f"\n📊 **Melhor distribuição encontrada:** {nome} (p = {p:.4f})\n"
+
+        # Capabilidade baseada na distribuição
+        p_baixo = dist.cdf(lsl, *params)
+        p_cima = 1 - dist.cdf(usl, *params)
+        total_defeitos = (p_baixo + p_cima) * 100
+        sigma_aprox = stats.norm.ppf(1 - (total_defeitos / 200))
+
+        texto += f"📉 **Capabilidade (baseada em {nome}):**\n"
+        texto += f"- % fora dos limites: {total_defeitos:.2f}%\n"
+        texto += f"- Nível Sigma estimado: {sigma_aprox:.2f}\n"
+
+        return texto, None
+
+    # Se nenhuma distribuição for boa, tenta Johnson
+    try:
+        pt = PowerTransformer(method='yeo-johnson')
+        dados_transformados = pt.fit_transform(dados.values.reshape(-1, 1)).flatten()
+        media_t = np.mean(dados_transformados)
+        desvio_t = np.std(dados_transformados, ddof=1)
+
+        cp = (usl - lsl) / (6 * desvio_t)
+        cpu = (usl - media_t) / (3 * desvio_t)
+        cpl = (media_t - lsl) / (3 * desvio_t)
+        cpk = min(cpu, cpl)
+        sigma = 3 * cpk
+
+        texto += "\n🔁 **Transformação Johnson (Yeo-Johnson): Aplicada com sucesso.**\n"
+        texto += f"- Nova média: {media_t:.4f} | Novo desvio: {desvio_t:.4f}\n"
+        texto += f"- Cp: {cp:.4f} | Cpk: {cpk:.4f} | Sigma estimado: {sigma:.4f}\n"
+
+        # Gráfico final
+        aplicar_estilo_minitab()
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.hist(dados_transformados, bins=20, color="#A6CEE3", edgecolor='black', density=True)
+        ax.set_title("Capabilidade com Transformação Johnson")
+        ax.axvline(media_t, color='darkgreen', linestyle='-', label="Média")
+        ax.axvline(lsl, color='red', linestyle='--', label='LSL')
+        ax.axvline(usl, color='red', linestyle='--', label='USL')
+        ax.legend()
+        plt.tight_layout()
+
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png')
+        buffer.seek(0)
+        img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+        plt.close()
+
+        return texto, img_base64
+
+    except Exception:
+        pass
+
+    # Se Johnson falhar – abordagem discreta
+    fora_limites = ((dados < lsl) | (dados > usl)).sum()
+    percentual = (fora_limites / n) * 100
+    sigma_est = stats.norm.ppf(1 - (percentual / 200))
+
+    texto += "\n❌ Transformação Johnson não foi aplicada com sucesso."
+    texto += f"\n🔚 **Capabilidade baseada em contagem empírica:**\n"
+    texto += f"- % de dados fora dos limites: {percentual:.2f}%\n"
+    texto += f"- Nível sigma estimado: {sigma_est:.2f}\n"
+
+    # Gráfico final (simples)
+    aplicar_estilo_minitab()
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.hist(dados, bins=20, color="#FFCC99", edgecolor='black', density=True)
+    ax.axvline(media, color='darkgreen', linestyle='-', label="Média")
+    ax.axvline(lsl, color='red', linestyle='--', label='LSL')
+    ax.axvline(usl, color='red', linestyle='--', label='USL')
+    ax.set_title("Capabilidade Empírica (sem transformação)")
+    ax.legend()
+    plt.tight_layout()
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    plt.close()
+
+    return texto, img_base64
+
+
 def analise_chi_quadrado(df, colunas_usadas):
     if len(colunas_usadas) < 2:
         raise ValueError("O teste qui-quadrado requer pelo menos duas colunas: uma Y e uma X.")
@@ -867,6 +1036,7 @@ ANALISES = {
     "teste_anova": teste_anova,
     "analise_chi_quadrado": analise_chi_quadrado,
     "capabilidade_normal": analise_capabilidade_normal,
+    "capabilidade_nao_normal": analise_capabilidade_nao_normal,
 
 }
 
