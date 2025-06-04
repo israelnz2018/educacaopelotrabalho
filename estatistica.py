@@ -292,7 +292,16 @@ def ajustar_distribuicoes_alternativas(dados, lsl, usl):
     params = melhor[nome_dist]
 
     x = np.linspace(min(dados), max(dados), 500)
-    y = getattr(stats, nome_dist).pdf(x, *params)
+    dist = getattr(stats, nome_dist)
+    if len(params) == 2:
+        y = dist.pdf(x, loc=params[0], scale=params[1])
+    elif len(params) == 3:
+        y = dist.pdf(x, params[0], loc=params[1], scale=params[2])
+    elif len(params) == 4:
+        y = dist.pdf(x, params[0], params[1], loc=params[2], scale=params[3])
+    else:
+        return \"Erro: parâmetros inválidos para gerar o gráfico.\", None, None
+
 
     aplicar_estilo_minitab()
     fig, ax = plt.subplots(figsize=(8, 4))
