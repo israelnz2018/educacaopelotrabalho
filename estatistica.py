@@ -278,6 +278,99 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
     return texto, imagem_base64
 
 
+def ajustar_distribuicoes_alternativas(dados, lsl, usl):
+    from fitter import Fitter
+
+    f = Fitter(dados, distributions=['weibull_min', 'lognorm', 'gamma', 'expon', 'beta'])
+    f.fit()
+
+    melhor = f.get_best(method='sumsquare_error')
+    if not melhor:
+        return "", None, None
+
+    nome_dist = list(melhor.keys())[0]
+    params = melhor[nome_dist]
+
+    x = np.linspace(min(dados), max(dados), 500)
+    y = getattr(stats, nome_dist).pdf(x, *params)
+
+    aplicar_estilo_minitab()
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.hist(dados, bins=15, density=True, alpha=0.7, color="#A6CEE3", edgecolor='black')
+    ax.plot(x, y, 'darkred', linewidth=2)
+    if lsl: ax.axvline(lsl, color='maroon', linestyle='--')
+    if usl: ax.axvline(usl, color='maroon', linestyle='--')
+    ax.set_title(f'Ajuste da Distribuição: {nome_dist}')
+    ax.set_xlabel("Valores")
+    ax.set_ylabel("Densidade")
+    plt.tight_layout()
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    plt.close()
+
+    texto = f"Distribuição ajustada: {nome_dist}\nParâmetros: {params}"
+    return texto, imagem_base64, nome_dist
+
+
+def aplicar_transformacao_johnson(dados, lsl, usl):
+    pt = PowerTransformer(method='yeo-johnson')
+    dados_reshape = dados.values.reshape(-1, 1)
+    dados_transformados = pt.fit_transform(dados_reshape).flatten()
+
+    media = np.mean(dados_transformados)
+    desvio_padrao = np.std(dados_transformados, ddof=1)
+
+    stat_ad = anderson(dados_transformados).statistic
+    normalizado = stat_ad < 0.6810
+
+    if not normalizado:
+        return "Transformação falhou: dados ainda não são normais.", None, False
+
+    ppl = ppu = pp = ppk = None
+    if lsl is not None:
+        ppl = (media - lsl) / (3 * desvio_padrao)
+    if usl is not None:
+        ppu = (usl - media) / (3 * desvio_padrao)
+
+    if ppl and ppu:
+        pp = (usl - lsl) / (6 * desvio_padrao)
+        ppk = min(ppl, ppu)
+    elif ppl:
+        ppk = ppl
+    elif ppu:
+        ppk = ppu
+
+    sigma_nivel = 3 * ppk if ppk else None
+
+    texto = f"Após transformação:\n- Média: {media:.4f}\n- Desvio padrão: {desvio_padrao:.4f}"
+    if pp: texto += f"\n- Pp: {pp:.4f}"
+    if ppk: texto += f"\n- Ppk: {ppk:.4f}"
+    if sigma_nivel: texto += f"\n- Nível Sigma estimado: {sigma_nivel:.4f}"
+
+    aplicar_estilo_minitab()
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.hist(dados_transformados, bins=15, color="#A6CEE3", edgecolor='black', alpha=0.9, density=True)
+    xmin, xmax = ax.get_xlim()
+    x = np.linspace(xmin, xmax, 500)
+    p = norm.pdf(x, media, desvio_padrao)
+    ax.plot(x, p, 'darkred', linewidth=2)
+    ax.set_title('Distribuição Após Transformação Johnson')
+    ax.set_xlabel("Valores Transformados")
+    ax.set_ylabel("Densidade")
+    plt.tight_layout()
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    plt.close()
+
+    return texto, imagem_base64, True
+
+
 
 def analise_chi_quadrado(df, colunas_usadas):
     if len(colunas_usadas) < 2:
