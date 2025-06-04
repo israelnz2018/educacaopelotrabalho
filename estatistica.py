@@ -190,17 +190,17 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
     media = np.mean(dados)
     desvio_padrao_amostral = np.std(dados, ddof=1)
 
-    # Teste de normalidade (3 métodos)
-stat_shapiro, p_shapiro = shapiro(dados)
-stat_kstest, p_kstest = kstest(dados, 'norm', args=(media, desvio_padrao_amostral))
-resultado_ad = anderson(dados)
-stat_ad = resultado_ad.statistic
+    # 🔍 Teste de normalidade (3 métodos)
+    stat_shapiro, p_shapiro = shapiro(dados)
+    stat_kstest, p_kstest = kstest(dados, 'norm', args=(media, desvio_padrao_amostral))
+    resultado_ad = anderson(dados)
+    stat_ad = resultado_ad.statistic
 
-normal_shapiro = p_shapiro > 0.05
-normal_kstest = p_kstest > 0.05
-normal_anderson = stat_ad < 0.6810  # Valor crítico 5% do Anderson-Darling
+    normal_shapiro = p_shapiro > 0.05
+    normal_kstest = p_kstest > 0.05
+    normal_anderson = stat_ad < 0.6810  # Valor crítico 5% do Anderson-Darling
 
-texto = f"""📊 **Análise de Capabilidade (Dados Não Normais)**
+    texto = f"""📊 **Análise de Capabilidade (Dados Não Normais)**
 
 📌 **Teste de Normalidade**
 - Shapiro-Wilk: estatística = {stat_shapiro:.4f}, p = {p_shapiro:.4f}
@@ -211,8 +211,7 @@ texto = f"""📊 **Análise de Capabilidade (Dados Não Normais)**
         texto += "\n\n✅ **Dados considerados normais com base em pelo menos um teste. Recomendação: utilize a análise de capabilidade normal.**"
         return texto, None
 
-
-    # Capabilidade com dados não normais
+    # ⚙️ Capabilidade com dados não normais
     ppl = ppu = pp = ppk = None
     if lsl is not None:
         ppl = (media - lsl) / (3 * desvio_padrao_amostral)
@@ -230,7 +229,6 @@ texto = f"""📊 **Análise de Capabilidade (Dados Não Normais)**
     sigma_nivel = 3 * ppk if ppk is not None else None
 
     texto += f"\n\n📌 **Resultados de Capabilidade**\n- Média: {media:.4f}\n- Desvio Padrão: {desvio_padrao_amostral:.4f}"
-
     if lsl is not None:
         texto += f"\n- LSL: {lsl:.4f}"
     if usl is not None:
@@ -256,6 +254,7 @@ texto = f"""📊 **Análise de Capabilidade (Dados Não Normais)**
         ax.axvline(lsl, color='maroon', linestyle='--', linewidth=1.5)
     if usl is not None:
         ax.axvline(usl, color='maroon', linestyle='--', linewidth=1.5)
+
     ax.axvline(media, color='darkgreen', linestyle='-', linewidth=2)
     ax.text(media, max(p) * 1.05, "Média", ha='center', fontsize=10, color='darkgreen')
 
@@ -271,8 +270,6 @@ texto = f"""📊 **Análise de Capabilidade (Dados Não Normais)**
     plt.close()
 
     return texto, imagem_base64
-
-
 
 
 def analise_chi_quadrado(df, colunas_usadas):
