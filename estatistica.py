@@ -300,7 +300,7 @@ def ajustar_distribuicoes_alternativas(dados, lsl, usl):
     elif len(params) == 4:
         y = dist.pdf(x, params[0], params[1], loc=params[2], scale=params[3])
     else:
-        return \"Erro: parâmetros inválidos para gerar o gráfico.\", None, None
+        return "Erro: parâmetros inválidos para gerar o gráfico.", None, None
 
 
     aplicar_estilo_minitab()
