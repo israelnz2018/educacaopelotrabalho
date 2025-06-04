@@ -135,21 +135,21 @@
     }
 
     if (ferramenta === "capabilidade_normal") {
-      const colunasX = slimSelectInstance ? slimSelectInstance.getSelected() : [];
-      if (!colunaY || !Array.isArray(colunasX) || colunasX.length !== 1) {
-        exibirModalErro("Para Capabilidade Normal, selecione uma coluna de dados (Y) e apenas uma coluna com os limites de especificação (X).");
+      if (!colunaY || colunasX.length !== 1) {
+        exibirModalErro("Para Capabilidade Normal, selecione uma coluna de dados (Y) e uma coluna com 1 ou 2 valores numéricos em X.");
         return false;
       }
     }
 
+    
 
     if (ferramenta === "capabilidade_nao_normal") {
-      const colunasX = slimSelectInstance ? slimSelectInstance.getSelected() : [];
-      if (!colunaY || !Array.isArray(colunasX) || colunasX.length !== 1) {
-        exibirModalErro("Para Capabilidade Não Normal, selecione uma coluna de dados (Y) e apenas uma coluna com os limites de especificação (X).");
+      if (!colunaY || colunasX.length !== 1) {
+        exibirModalErro("Para Capabilidade Não Normal, selecione uma coluna de dados (Y) e uma coluna com 1 ou 2 valores numéricos em X.");
         return false;
       }
     }
+
 
     if (grafico === "Grafico_barras_agrupado") {
       if (colunasX.length !== 2) {
