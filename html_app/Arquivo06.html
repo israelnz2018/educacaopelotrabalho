@@ -143,6 +143,14 @@
     }
 
 
+    if (ferramenta === "capabilidade_nao_normal") {
+      const colunasX = slimSelectInstance ? slimSelectInstance.getSelected() : [];
+      if (!colunaY || !Array.isArray(colunasX) || colunasX.length !== 1) {
+        exibirModalErro("Para Capabilidade Não Normal, selecione uma coluna de dados (Y) e apenas uma coluna com os limites de especificação (X).");
+        return false;
+      }
+    }
+
     if (grafico === "Grafico_barras_agrupado") {
       if (colunasX.length !== 2) {
         exibirModalErro("Selecione exatamente duas colunas no campo X para o Gráfico de Barras Agrupado.");
