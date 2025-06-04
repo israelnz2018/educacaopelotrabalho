@@ -14,6 +14,8 @@ from statsmodels.miscmodels.ordinal_model import OrderedModel
 from scipy.stats import chi2_contingency
 from scipy.stats import anderson, shapiro, kstest, norm
 from sklearn.preprocessing import PowerTransformer
+from statsmodels.stats.diagnostic import normal_ad
+
 
 
 # 🧪 Testes estatísticos
