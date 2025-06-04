@@ -44,6 +44,87 @@ def salvar_grafico():
     os.remove(caminho)
     return img_base64
 
+
+def analise_capabilidade_normal(df, colunas_usadas):
+    nome_coluna_y = colunas_usadas[0]
+    nome_coluna_x = colunas_usadas[1]
+
+    dados = df[nome_coluna_y].dropna().astype(float)
+    limites = df[nome_coluna_x].dropna().unique()
+
+    if len(limites) != 2:
+        raise ValueError("A coluna de limites deve conter exatamente dois valores numéricos (LSL e USL).")
+
+    lsl, usl = sorted(limites)
+
+    media = np.mean(dados)
+    desvio_padrao = np.std(dados, ddof=1)
+    n = len(dados)
+
+    # Cp e Cpk
+    cp = (usl - lsl) / (6 * desvio_padrao)
+    cpu = (usl - media) / (3 * desvio_padrao)
+    cpl = (media - lsl) / (3 * desvio_padrao)
+    cpk = min(cpu, cpl)
+
+    # Pp e Ppk
+    pp = (usl - lsl) / (6 * np.std(dados, ddof=0))
+    ppu = (usl - media) / (3 * np.std(dados, ddof=0))
+    ppl = (media - lsl) / (3 * np.std(dados, ddof=0))
+    ppk = min(ppu, ppl)
+
+    # Nível sigma estimado
+    sigma_nivel = 3 * cpk
+
+    # 📈 Gráfico de Capabilidade Estilo Minitab
+    aplicar_estilo_minitab()
+    fig, ax = plt.subplots(figsize=(8, 4))
+
+    # Histograma
+    counts, bins, patches = ax.hist(dados, bins=15, color="#A6CEE3", edgecolor='black', alpha=0.9, density=True)
+
+    # Curva normal teórica
+    xmin, xmax = ax.get_xlim()
+    x = np.linspace(xmin, xmax, 500)
+    p = norm.pdf(x, media, desvio_padrao)
+    ax.plot(x, p, 'darkred', linewidth=2)
+
+    # Linhas LSL, USL, Média
+    ax.axvline(lsl, color='maroon', linestyle='--', linewidth=1.5)
+    ax.axvline(usl, color='maroon', linestyle='--', linewidth=1.5)
+    ax.axvline(media, color='darkgreen', linestyle='-', linewidth=2)
+    ax.text(media, max(p) * 1.05, "Alvo", ha='center', va='bottom', fontsize=10, color='darkgreen')
+
+    # Títulos e layout
+    ax.set_title('Capabilidade do Processo (Normal)', fontsize=14, weight='bold')
+    ax.set_xlabel(nome_coluna_y)
+    ax.set_ylabel('Densidade')
+    ax.set_xlim(xmin, xmax)
+    plt.tight_layout()
+
+    # Exporta como base64
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    plt.close()
+
+    # Texto explicativo
+    texto = f"""📊 **Análise de Capabilidade (Distribuição Normal)**
+
+- LSL: {lsl:.4f}
+- USL: {usl:.4f}
+- Média: {media:.4f}
+- Desvio Padrão: {desvio_padrao:.4f}
+- Cp: {cp:.4f}
+- Cpk: {cpk:.4f}
+- Pp: {pp:.4f}
+- Ppk: {ppk:.4f}
+- Nível Sigma estimado: {sigma_nivel:.4f}
+"""
+
+    return texto, imagem_base64
+
 def analise_chi_quadrado(df, colunas_usadas):
     if len(colunas_usadas) < 2:
         raise ValueError("O teste qui-quadrado requer pelo menos duas colunas: uma Y e uma X.")
@@ -784,7 +865,8 @@ ANALISES = {
     "teste_paired_t": analise_teste_paired_t,
     "teste_variancias": teste_variancias,
     "teste_anova": teste_anova,
-    "analise_chi_quadrado": analise_chi_quadrado
+    "analise_chi_quadrado": analise_chi_quadrado,
+    "capabilidade_normal": analise_capabilidade_normal,
 
 }
 
