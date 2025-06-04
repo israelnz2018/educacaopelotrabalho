@@ -276,64 +276,144 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
         texto += "\n\n🔁 Recomenda-se aplicar uma transformação matemática (ex: Yeo-Johnson) para tornar os dados aproximadamente normais e então calcular a capabilidade."
         return texto, None
 
+def aplicar_transformacao_johnson(df, colunas_usadas):
+    nome_coluna_y = colunas_usadas[0]
+    nome_coluna_x = colunas_usadas[1]
 
+    dados = df[nome_coluna_y].dropna().astype(float)
+    limites = df[nome_coluna_x].dropna().unique()
 
+    if len(limites) < 1 or len(limites) > 2:
+        raise ValueError("A coluna de limites deve conter um ou dois valores numéricos (LSL e/ou USL).")
 
-def aplicar_transformacao_johnson(dados, lsl, usl):
+    # Definir LSL e USL
+    lsl = usl = None
+    if len(limites) == 2:
+        lsl, usl = sorted(limites)
+    elif len(limites) == 1:
+        if df[nome_coluna_x].iloc[1] != '':
+            lsl = limites[0]
+        else:
+            usl = limites[0]
+
+    # Aplicar transformação Yeo-Johnson
     pt = PowerTransformer(method='yeo-johnson')
-    dados_reshape = dados.values.reshape(-1, 1)
-    dados_transformados = pt.fit_transform(dados_reshape).flatten()
+    dados_transformados = pt.fit_transform(dados.values.reshape(-1, 1)).flatten()
 
-    media = np.mean(dados_transformados)
-    desvio_padrao = np.std(dados_transformados, ddof=1)
-
+    # Teste de normalidade
     stat_ad = anderson(dados_transformados).statistic
-    normalizado = stat_ad < 0.6810
+    normal = stat_ad < 0.6810
 
-    if not normalizado:
-        return "Transformação falhou: dados ainda não são normais.", None, False
+    if normal:
+        media = np.mean(dados_transformados)
+        desvio = np.std(dados_transformados, ddof=1)
 
-    ppl = ppu = pp = ppk = None
-    if lsl is not None:
-        ppl = (media - lsl) / (3 * desvio_padrao)
-    if usl is not None:
-        ppu = (usl - media) / (3 * desvio_padrao)
+        ppl = ppu = pp = ppk = None
+        if lsl is not None:
+            ppl = (media - lsl) / (3 * desvio)
+        if usl is not None:
+            ppu = (usl - media) / (3 * desvio)
 
-    if ppl and ppu:
-        pp = (usl - lsl) / (6 * desvio_padrao)
-        ppk = min(ppl, ppu)
-    elif ppl:
-        ppk = ppl
-    elif ppu:
-        ppk = ppu
+        if ppl is not None and ppu is not None:
+            pp = (usl - lsl) / (6 * desvio)
+            ppk = min(ppl, ppu)
+        elif ppl is not None:
+            ppk = ppl
+        elif ppu is not None:
+            ppk = ppu
 
-    sigma_nivel = 3 * ppk if ppk else None
+        sigma_nivel = 3 * ppk if ppk is not None else None
 
-    texto = f"Após transformação:\n- Média: {media:.4f}\n- Desvio padrão: {desvio_padrao:.4f}"
-    if pp: texto += f"\n- Pp: {pp:.4f}"
-    if ppk: texto += f"\n- Ppk: {ppk:.4f}"
-    if sigma_nivel: texto += f"\n- Nível Sigma estimado: {sigma_nivel:.4f}"
+        texto = "🔁 **Transformação Yeo-Johnson aplicada com sucesso**\n\n"
+        texto += f"📌 Média transformada: {media:.4f}\n"
+        texto += f"📌 Desvio padrão: {desvio:.4f}\n"
+        if lsl is not None:
+            texto += f"- LSL: {lsl:.4f}\n"
+        if usl is not None:
+            texto += f"- USL: {usl:.4f}\n"
+        if pp is not None:
+            texto += f"- Pp: {pp:.4f}\n"
+        if ppk is not None:
+            texto += f"- Ppk: {ppk:.4f}\n"
+        if sigma_nivel is not None:
+            texto += f"- Nível Sigma estimado: {sigma_nivel:.4f}"
 
-    aplicar_estilo_minitab()
-    fig, ax = plt.subplots(figsize=(8, 4))
-    ax.hist(dados_transformados, bins=15, color="#A6CEE3", edgecolor='black', alpha=0.9, density=True)
-    xmin, xmax = ax.get_xlim()
-    x = np.linspace(xmin, xmax, 500)
-    p = norm.pdf(x, media, desvio_padrao)
-    ax.plot(x, p, 'darkred', linewidth=2)
-    ax.set_title('Distribuição Após Transformação Johnson')
-    ax.set_xlabel("Valores Transformados")
-    ax.set_ylabel("Densidade")
-    plt.tight_layout()
+        aplicar_estilo_minitab()
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.hist(dados_transformados, bins=15, density=True, alpha=0.7, color="#A6CEE3", edgecolor='black')
 
-    buffer = BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
-    plt.close()
+        x = np.linspace(min(dados_transformados), max(dados_transformados), 500)
+        y = norm.pdf(x, media, desvio)
+        ax.plot(x, y, 'darkred', linewidth=2)
 
-    return texto, imagem_base64, True
+        if lsl is not None:
+            ax.axvline(lsl, color='maroon', linestyle='--')
+        if usl is not None:
+            ax.axvline(usl, color='maroon', linestyle='--')
+        ax.axvline(media, color='darkgreen', linestyle='-', linewidth=2)
+        ax.text(media, max(y) * 1.05, "Média", ha='center', fontsize=10, color='darkgreen')
 
+        ax.set_title("Capabilidade (dados transformados)")
+        ax.set_xlabel(nome_coluna_y + " (transformado)")
+        ax.set_ylabel("Densidade")
+        plt.tight_layout()
+
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png')
+        buffer.seek(0)
+        imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+        plt.close()
+
+        return texto, imagem_base64, True
+
+    else:
+        # Discretização: % fora dos limites
+        total = len(dados)
+        abaixo_lsl = len(dados[dados < lsl]) if lsl is not None else 0
+        acima_usl = len(dados[dados > usl]) if usl is not None else 0
+        fora = abaixo_lsl + acima_usl
+        percentual_fora = fora / total
+
+        # Estimativa sigma via tabela Z inversa (1-tailed)
+        try:
+            sigma_estimado = norm.ppf(1 - percentual_fora / 2)
+        except:
+            sigma_estimado = None
+
+        texto = "🔁 **Transformação Yeo-Johnson falhou em normalizar os dados**\n"
+        texto += f"\n❌ Dados continuam não normais após transformação."
+        texto += f"\n📊 Estimando capabilidade com base em dados discretos:"
+        texto += f"\n- Total de amostras: {total}"
+        if lsl is not None:
+            texto += f"\n- Abaixo do LSL: {abaixo_lsl}"
+        if usl is not None:
+            texto += f"\n- Acima do USL: {acima_usl}"
+        texto += f"\n- % Fora dos limites: {percentual_fora:.2%}"
+        if sigma_estimado:
+            texto += f"\n- Nível Sigma estimado (aproximado): {sigma_estimado:.2f}"
+
+        aplicar_estilo_minitab()
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.hist(dados, bins=15, color="#A6CEE3", edgecolor='black', alpha=0.8)
+
+        if lsl is not None:
+            ax.axvline(lsl, color='maroon', linestyle='--', label='LSL')
+        if usl is not None:
+            ax.axvline(usl, color='maroon', linestyle='--', label='USL')
+        ax.axvline(np.mean(dados), color='darkgreen', linestyle='-', linewidth=2, label='Média')
+        ax.set_title("Capabilidade (dados discretos)")
+        ax.set_xlabel(nome_coluna_y)
+        ax.set_ylabel("Frequência")
+        ax.legend()
+        plt.tight_layout()
+
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png')
+        buffer.seek(0)
+        imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+        plt.close()
+
+        return texto, imagem_base64, False
 
 
 def analise_chi_quadrado(df, colunas_usadas):
@@ -1079,6 +1159,8 @@ ANALISES = {
     "analise_chi_quadrado": analise_chi_quadrado,
     "capabilidade_normal": analise_capabilidade_normal,
     "capabilidade_nao_normal": analise_capabilidade_nao_normal,
+    "Transformação Johnson": aplicar_transformacao_johnson,
+
 
 }
 
