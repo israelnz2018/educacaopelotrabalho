@@ -46,6 +46,123 @@ def salvar_grafico():
     os.remove(caminho)
     return img_base64
 
+def analise_capabilidade_normal(df, colunas_usadas):
+    from scipy.stats import norm, shapiro, anderson, kstest
+    from io import BytesIO
+    import base64
+
+    nome_coluna_y = colunas_usadas[0]
+    nome_coluna_x = colunas_usadas[1]
+
+    dados = df[nome_coluna_y].dropna().astype(float)
+    limites = df[nome_coluna_x].dropna().astype(float).unique()
+
+    if len(limites) < 1 or len(limites) > 2:
+        raise ValueError("A coluna de limites deve conter um ou dois valores numéricos.")
+
+    # Detecta LSL e USL
+    LSL, USL = None, None
+    if len(limites) == 1:
+        # Detecta com base na posição na planilha
+        if not pd.isna(df[nome_coluna_x].iloc[1]):
+            LSL = limites[0]
+        else:
+            USL = limites[0]
+    else:
+        LSL, USL = sorted(limites[:2])
+
+    media = np.mean(dados)
+    desvio_padrao = np.std(dados, ddof=1)
+    desvio_padrao_pop = np.std(dados, ddof=0)
+
+    # 🧪 Testes de normalidade
+    sw_stat, sw_p = shapiro(dados)
+    ad_result = anderson(dados)
+    ad_stat = ad_result.statistic
+    ad_critico = ad_result.critical_values[2]  # 5%
+    ks_stat, ks_p = kstest(dados, 'norm', args=(media, desvio_padrao))
+
+    normal = False
+    if sw_p > 0.05 or ad_stat < ad_critico or ks_p > 0.05:
+        normal = True
+
+    if not normal:
+        return {
+            "analise": f"""❌ Os dados **não são normais** segundo os testes de normalidade.
+- Shapiro-Wilk: p = {sw_p:.4f}
+- Anderson-Darling: estatística = {ad_stat:.4f} | critério = {ad_critico:.4f}
+- Kolmogorov-Smirnov: p = {ks_p:.4f}
+
+Recomenda-se utilizar a **Análise de Capabilidade para Dados Não Normais**.""",
+            "graficos": [],
+            "colunas_utilizadas": colunas_usadas
+        }
+
+    # Cp e Cpk (quando possível)
+    cp = ((USL - LSL) / (6 * desvio_padrao)) if (USL and LSL) else None
+    cpu = ((USL - media) / (3 * desvio_padrao)) if USL else None
+    cpl = ((media - LSL) / (3 * desvio_padrao)) if LSL else None
+    cpk = min(cpu or float('inf'), cpl or float('inf'))
+
+    # Pp e Ppk (quando possível)
+    pp = ((USL - LSL) / (6 * desvio_padrao_pop)) if (USL and LSL) else None
+    ppu = ((USL - media) / (3 * desvio_padrao_pop)) if USL else None
+    ppl = ((media - LSL) / (3 * desvio_padrao_pop)) if LSL else None
+    ppk = min(ppu or float('inf'), ppl or float('inf'))
+
+    # Nível sigma estimado
+    sigma_nivel = 3 * cpk
+
+    # 📈 Gráfico de Capabilidade Estilo Minitab
+    aplicar_estilo_minitab()
+    fig, ax = plt.subplots(figsize=(8, 4))
+
+    counts, bins, patches = ax.hist(dados, bins=15, color="#A6CEE3", edgecolor='black', alpha=0.9, density=True)
+
+    xmin, xmax = ax.get_xlim()
+    x = np.linspace(xmin, xmax, 500)
+    p = norm.pdf(x, media, desvio_padrao)
+    ax.plot(x, p, 'darkred', linewidth=2)
+
+    if LSL: ax.axvline(LSL, color='maroon', linestyle='--', linewidth=1.5, label='LSL')
+    if USL: ax.axvline(USL, color='maroon', linestyle='--', linewidth=1.5, label='USL')
+    ax.axvline(media, color='darkgreen', linestyle='-', linewidth=2, label='Média')
+    ax.text(media, max(p) * 1.05, "Alvo", ha='center', va='bottom', fontsize=10, color='darkgreen')
+
+    ax.set_title('Capabilidade do Processo (Normal)', fontsize=14, weight='bold')
+    ax.set_xlabel(nome_coluna_y)
+    ax.set_ylabel('Densidade')
+    ax.set_xlim(xmin, xmax)
+    ax.legend()
+    plt.tight_layout()
+
+    buf = BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    imagem_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close()
+
+    # Texto explicativo
+    texto = f"""📊 **Análise de Capabilidade (Distribuição Normal)**
+
+- Média: {media:.4f}
+- Desvio Padrão: {desvio_padrao:.4f}
+"""
+
+    if LSL: texto += f"- LSL: {LSL:.4f}\n"
+    if USL: texto += f"- USL: {USL:.4f}\n"
+    if cp: texto += f"- Cp: {cp:.4f}\n"
+    if cpk: texto += f"- Cpk: {cpk:.4f}\n"
+    if pp: texto += f"- Pp: {pp:.4f}\n"
+    if ppk: texto += f"- Ppk: {ppk:.4f}\n"
+
+    texto += f"- Nível Sigma estimado: {sigma_nivel:.4f}"
+
+    return {
+        "analise": texto,
+        "graficos": [imagem_base64],
+        "colunas_utilizadas": colunas_usadas
+    }
 
 def analise_capabilidade_nao_normal(df, colunas_usadas):
     
