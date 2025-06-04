@@ -168,6 +168,7 @@ Recomenda-se utilizar a **Análise de Capabilidade para Dados Não Normais**."""
 
 
 def analise_capabilidade_nao_normal(df, colunas_usadas):
+    
     nome_coluna_y = colunas_usadas[0]
     nome_coluna_x = colunas_usadas[1]
 
@@ -186,7 +187,7 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
         else:
             usl = limites[0]
 
-    # 🔍 Teste de normalidade (não mostra ao aluno)
+    # 🔍 Teste de normalidade (sem mostrar para o aluno)
     media = np.mean(dados)
     desvio = np.std(dados, ddof=1)
     normal1 = shapiro(dados)[1] > 0.05
@@ -198,8 +199,6 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
         return texto, None
 
     # 🧪 Tentar ajuste com distribuições alternativas
-    from scipy.stats import kstest
-
     distribuicoes = ['lognorm', 'weibull_min', 'gamma', 'expon', 'beta']
     resultados = []
 
@@ -237,6 +236,15 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
         except Exception:
             return texto + "\n\n❌ Erro ao gerar gráfico da distribuição.", None
 
+        # Gráfico com estilo Minitab
+        def aplicar_estilo_minitab():
+            plt.style.use('default')
+            plt.grid(True, linestyle=':', linewidth=0.5)
+            plt.rcParams['axes.facecolor'] = 'white'
+            plt.rcParams['axes.edgecolor'] = 'black'
+            plt.rcParams['axes.grid'] = True
+            plt.rcParams['grid.alpha'] = 0.4
+
         aplicar_estilo_minitab()
         fig, ax = plt.subplots(figsize=(8, 4))
         ax.hist(dados, bins=15, density=True, alpha=0.7, color="#A6CEE3", edgecolor='black')
@@ -267,6 +275,7 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
         texto += "\n\n❌ Nenhuma distribuição apresentou p > 0.05."
         texto += "\n\n🔁 Recomenda-se aplicar uma transformação matemática (ex: Yeo-Johnson) para tornar os dados aproximadamente normais e então calcular a capabilidade."
         return texto, None
+
 
 
 
