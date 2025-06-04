@@ -364,7 +364,8 @@ def aplicar_transformacao_johnson(df, colunas_usadas):
         imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
         plt.close()
 
-        return texto, imagem_base64, True
+        return texto, imagem_base64
+
 
     else:
         # Discretização: % fora dos limites
