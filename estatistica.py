@@ -1159,8 +1159,8 @@ ANALISES = {
     "analise_chi_quadrado": analise_chi_quadrado,
     "capabilidade_normal": analise_capabilidade_normal,
     "capabilidade_nao_normal": analise_capabilidade_nao_normal,
-    "Transformação Johnson": aplicar_transformacao_johnson,
-
-
+    "transformacao_johnson": aplicar_transformacao_johnson
 }
+
+
 
