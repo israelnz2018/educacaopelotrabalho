@@ -167,7 +167,6 @@ Recomenda-se utilizar a **Análise de Capabilidade para Dados Não Normais**."""
     }
 
 
-
 def analise_capabilidade_nao_normal(df, colunas_usadas):
     nome_coluna_y = colunas_usadas[0]
     nome_coluna_x = colunas_usadas[1]
@@ -187,139 +186,88 @@ def analise_capabilidade_nao_normal(df, colunas_usadas):
         else:
             usl = limites[0]
 
+    # 🔍 Teste de normalidade (não mostra ao aluno)
     media = np.mean(dados)
-    desvio_padrao_amostral = np.std(dados, ddof=1)
+    desvio = np.std(dados, ddof=1)
+    normal1 = shapiro(dados)[1] > 0.05
+    normal2 = kstest(dados, 'norm', args=(media, desvio))[1] > 0.05
+    normal3 = anderson(dados).statistic < 0.6810
 
-    # 🔍 Teste de normalidade (3 métodos)
-    stat_shapiro, p_shapiro = shapiro(dados)
-    stat_kstest, p_kstest = kstest(dados, 'norm', args=(media, desvio_padrao_amostral))
-    resultado_ad = anderson(dados)
-    stat_ad = resultado_ad.statistic
-
-    normal_shapiro = p_shapiro > 0.05
-    normal_kstest = p_kstest > 0.05
-    normal_anderson = stat_ad < 0.6810
-
-    texto = f"""📊 **Análise de Capabilidade (Dados Não Normais)**\n\n📌 **Teste de Normalidade**\n- Shapiro-Wilk: estatística = {stat_shapiro:.4f}, p = {p_shapiro:.4f}\n- Kolmogorov-Smirnov: estatística = {stat_kstest:.4f}, p = {p_kstest:.4f}\n- Anderson-Darling: estatística = {stat_ad:.4f}, limiar crítico = 0.6810"""
-
-    if normal_shapiro or normal_kstest or normal_anderson:
-        texto += "\n\n✅ **Dados considerados normais com base em pelo menos um teste. Recomendação: utilize a análise de capabilidade normal.**"
+    if normal1 or normal2 or normal3:
+        texto = "📊 **Análise de Capabilidade**\n\n✅ Os dados parecem seguir uma distribuição normal. Recomenda-se utilizar a análise de capabilidade normal."
         return texto, None
 
-    # ➕ Tenta ajuste de distribuições alternativas
-    texto_dist, imagem_dist, melhor_distribuicao = ajustar_distribuicoes_alternativas(dados, lsl, usl)
-    if melhor_distribuicao:
-        texto += "\n\n📈 **Distribuição Alternativa Ajustada**\n" + texto_dist
-        return texto, imagem_dist
+    # 🧪 Tentar ajuste com distribuições alternativas
+    from scipy.stats import kstest
 
-    # 🔁 Tenta transformação Johnson se nenhuma distribuição alternativa for adequada
-    texto_johnson, imagem_johnson, sucesso = aplicar_transformacao_johnson(dados, lsl, usl)
-    if sucesso:
-        texto += "\n\n🔁 **Transformação Johnson aplicada com sucesso**\n" + texto_johnson
-        return texto, imagem_johnson
+    distribuicoes = ['lognorm', 'weibull_min', 'gamma', 'expon', 'beta']
+    resultados = []
 
-    # ❌ Nenhuma alternativa funcionou: faz análise mesmo assim
-    ppl = ppu = pp = ppk = None
-    if lsl is not None:
-        ppl = (media - lsl) / (3 * desvio_padrao_amostral)
-    if usl is not None:
-        ppu = (usl - media) / (3 * desvio_padrao_amostral)
+    for dist_name in distribuicoes:
+        dist = getattr(stats, dist_name)
+        try:
+            params = dist.fit(dados)
+            stat, p = kstest(dados, dist_name, args=params)
+            resultados.append((dist_name, p, params))
+        except Exception:
+            continue
 
-    if ppl is not None and ppu is not None:
-        pp = (usl - lsl) / (6 * desvio_padrao_amostral)
-        ppk = min(ppl, ppu)
-    elif ppl is not None:
-        ppk = ppl
-    elif ppu is not None:
-        ppk = ppu
+    resultados.sort(key=lambda x: x[1], reverse=True)
 
-    sigma_nivel = 3 * ppk if ppk is not None else None
+    texto = "📊 **Teste de Aderência às Distribuições**\n\n"
+    for nome, pval, _ in resultados:
+        texto += f"- {nome}: p = {pval:.4f}\n"
 
-    texto += f"\n\n📌 **Resultados de Capabilidade**\n- Média: {media:.4f}\n- Desvio Padrão: {desvio_padrao_amostral:.4f}"
-    if lsl is not None:
-        texto += f"\n- LSL: {lsl:.4f}"
-    if usl is not None:
-        texto += f"\n- USL: {usl:.4f}"
-    if pp is not None:
-        texto += f"\n- Pp: {pp:.4f}"
-    if ppk is not None:
-        texto += f"\n- Ppk: {ppk:.4f}"
-    if sigma_nivel is not None:
-        texto += f"\n- Nível Sigma estimado: {sigma_nivel:.4f}"
+    if len(resultados) == 0:
+        texto += "\n❌ Nenhuma distribuição pôde ser ajustada."
+        texto += "\n\n🔁 Recomenda-se aplicar transformação matemática (ex: Yeo-Johnson)."
+        return texto, None
 
-    aplicar_estilo_minitab()
-    fig, ax = plt.subplots(figsize=(8, 4))
-    ax.hist(dados, bins=15, color="#A6CEE3", edgecolor='black', alpha=0.9, density=True)
+    melhor_nome, melhor_p, melhor_params = resultados[0]
 
-    xmin, xmax = ax.get_xlim()
-    x = np.linspace(xmin, xmax, 500)
-    p = norm.pdf(x, media, desvio_padrao_amostral)
-    ax.plot(x, p, 'darkred', linewidth=2)
+    if melhor_p > 0.05:
+        texto += f"\n✅ **Melhor distribuição encontrada: {melhor_nome} (p = {melhor_p:.4f})**"
 
-    if lsl is not None:
-        ax.axvline(lsl, color='maroon', linestyle='--', linewidth=1.5)
-    if usl is not None:
-        ax.axvline(usl, color='maroon', linestyle='--', linewidth=1.5)
-    ax.axvline(media, color='darkgreen', linestyle='-', linewidth=2)
-    ax.text(media, max(p) * 1.05, "Média", ha='center', fontsize=10, color='darkgreen')
+        # Geração do gráfico com curva ajustada
+        x = np.linspace(min(dados), max(dados), 500)
+        dist = getattr(stats, melhor_nome)
 
-    ax.set_title('Capabilidade do Processo (Não Normal)', fontsize=14, weight='bold')
-    ax.set_xlabel(nome_coluna_y)
-    ax.set_ylabel('Densidade')
-    plt.tight_layout()
+        try:
+            y = dist.pdf(x, *melhor_params)
+        except Exception:
+            return texto + "\n\n❌ Erro ao gerar gráfico da distribuição.", None
 
-    buffer = BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
-    plt.close()
+        aplicar_estilo_minitab()
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.hist(dados, bins=15, density=True, alpha=0.7, color="#A6CEE3", edgecolor='black')
+        ax.plot(x, y, 'darkred', linewidth=2)
 
-    texto += "\n\n⚠️ Nenhuma distribuição alternativa se ajustou bem e a transformação também falhou. Os resultados abaixo são baseados nos dados originais, com possível imprecisão."
-    return texto, imagem_base64
+        media = np.mean(dados)
+        if lsl is not None:
+            ax.axvline(lsl, color='maroon', linestyle='--')
+        if usl is not None:
+            ax.axvline(usl, color='maroon', linestyle='--')
+        ax.axvline(media, color='darkgreen', linestyle='-', linewidth=2)
+        ax.text(media, max(y) * 1.05, "Média", ha='center', fontsize=10, color='darkgreen')
 
+        ax.set_title(f'Capabilidade - {melhor_nome}')
+        ax.set_xlabel(nome_coluna_y)
+        ax.set_ylabel("Densidade")
+        plt.tight_layout()
 
-def ajustar_distribuicoes_alternativas(dados, lsl, usl):
-    from fitter import Fitter
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png')
+        buffer.seek(0)
+        imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+        plt.close()
 
-    f = Fitter(dados, distributions=['weibull_min', 'lognorm', 'gamma', 'expon', 'beta'])
-    f.fit()
+        return texto, imagem_base64
 
-    melhor = f.get_best(method='sumsquare_error')
-    if not melhor:
-        return "", None, None
+    else:
+        texto += "\n\n❌ Nenhuma distribuição apresentou p > 0.05."
+        texto += "\n\n🔁 Recomenda-se aplicar uma transformação matemática (ex: Yeo-Johnson) para tornar os dados aproximadamente normais e então calcular a capabilidade."
+        return texto, None
 
-    nome_dist = list(melhor.keys())[0]
-    params = melhor[nome_dist]
-
-
-    x = np.linspace(min(dados), max(dados), 500)
-    dist = getattr(stats, nome_dist)
-
-    try:
-        y = dist.pdf(x, *params.values())
-    except Exception:
-        return "Erro: parâmetros inválidos para gerar o gráfico.", None, None
-
-
-    aplicar_estilo_minitab()
-    fig, ax = plt.subplots(figsize=(8, 4))
-    ax.hist(dados, bins=15, density=True, alpha=0.7, color="#A6CEE3", edgecolor='black')
-    ax.plot(x, y, 'darkred', linewidth=2)
-    if lsl: ax.axvline(lsl, color='maroon', linestyle='--')
-    if usl: ax.axvline(usl, color='maroon', linestyle='--')
-    ax.set_title(f'Ajuste da Distribuição: {nome_dist}')
-    ax.set_xlabel("Valores")
-    ax.set_ylabel("Densidade")
-    plt.tight_layout()
-
-    buffer = BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
-    plt.close()
-
-    texto = f"Distribuição ajustada: {nome_dist}\nParâmetros: {params}"
-    return texto, imagem_base64, nome_dist
 
 
 def aplicar_transformacao_johnson(dados, lsl, usl):
