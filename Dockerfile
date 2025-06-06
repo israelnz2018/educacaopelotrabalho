@@ -1,1 +1,16 @@
+FROM python:3.11-slim
+
+# garante que a imagem crie /app como raiz da aplicação
+WORKDIR /app
+
+# copia apenas a pasta 'n8n' (contendo todos os seus .py, start.sh, HTML etc.) para /app/n8n
+COPY n8n /app/n8n
+
+# torna o start.sh executável e instala dependências a partir de /app/n8n
+RUN chmod +x /app/n8n/start.sh \
+ && pip install --upgrade pip \
+ && pip install -r /app/n8n/requirements.txt
+
+# chama diretamente o /app/n8n/start.sh
+ENTRYPOINT ["sh", "/app/n8n/start.sh"]
 
