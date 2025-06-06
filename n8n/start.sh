@@ -13,8 +13,17 @@ else
   exit 1
 fi
 
+# ——————————
+# Aqui é a única mudança:
+# ——————————
+
+# 1) Navega para dentro de /app/n8n
+cd /app/n8n
+
+# 2) Inicia o servidor sem prefixar 'n8n.' nos imports
 echo "🚀 Iniciando servidor com uvicorn na porta ${PORT}..."
-uvicorn n8n.main:app --host 0.0.0.0 --port ${PORT}
+uvicorn main:app --host 0.0.0.0 --port ${PORT}
+
 
 
 
