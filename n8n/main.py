@@ -13,6 +13,10 @@ from graficos import GRAFICOS
 from agente import interpretar_analise  # ✅ Agente ativado
 
 app = FastAPI()
+@app.get("/healthz")
+def healthcheck():
+    return JSONResponse(content={"status": "ok"})
+
 
 # Monta a pasta html_app como estática para CSS, JS e outros
 app.mount("/html_app", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "html_app")), name="html_app")
