@@ -18,9 +18,9 @@ app = FastAPI()
 def healthcheck():
     return JSONResponse(content={"status": "ok"})
 
-# Serve TODO o conteúdo da pasta 'n8n' diretamente em '/'
+# Serve TODO o conteúdo da pasta 'n8n' sob o prefixo "/html"
 static_path = os.path.dirname(__file__)
-app.mount("/", StaticFiles(directory=static_path), name="static")
+app.mount("/html", StaticFiles(directory=static_path), name="static")
 templates = Jinja2Templates(directory=static_path)
 
 @app.get("/", response_class=HTMLResponse)
@@ -112,5 +112,6 @@ async def analisar(
             },
             status_code=500
         )
+
 
 
