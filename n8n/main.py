@@ -18,14 +18,15 @@ app = FastAPI()
 def healthcheck():
     return JSONResponse(content={"status": "ok"})
 
-# 📁 Caminho atualizado para servir os arquivos diretamente da pasta 'n8n'
+# 📁 Caminho correto: raiz do projeto
 static_path = os.path.dirname(__file__)
 
-# 🎯 Monta a própria pasta 'n8n' como raiz dos arquivos estáticos
-app.mount("/html_app", StaticFiles(directory=static_path), name="html_app")
+# 🎯 Monta a própria pasta como raiz estática (sem /html_app)
+app.mount("/", StaticFiles(directory=static_path), name="static")
 
-# 🧩 Configura o Jinja2 para ler templates direto da pasta atual
+# 🧩 Templates também na pasta atual
 templates = Jinja2Templates(directory=static_path)
+
 
 @app.get("/", response_class=HTMLResponse)
 async def raiz(request: Request):
