@@ -1,1 +1,173 @@
 
+<script>
+  function validarCamposSelecionados() {
+    const ferramenta = document.getElementById("ferramenta").value;
+    const grafico = document.getElementById("grafico_tipo").value;
+    const colunaY = document.getElementById("coluna_y").value;
+    const colunasX = slimSelectInstance ? slimSelectInstance.getSelected() : [];
+
+    if (!ferramenta && !grafico) {
+      exibirModalErro("Selecione uma ferramenta estatística ou um tipo de gráfico.");
+      return false;
+    }
+
+    if (!colunaY && colunasX.length === 0) {
+      exibirModalErro("Selecione pelo menos uma coluna Y ou uma ou mais colunas X.");
+      return false;
+    }
+
+    if (ferramenta === "regressao_simples") {
+      if (!colunaY) {
+        exibirModalErro("Selecione a coluna Y para a regressão linear simples.");
+        return false;
+      }
+      if (colunasX.length !== 1) {
+        exibirModalErro("Selecione exatamente uma coluna X para a regressão linear simples.");
+        return false;
+      }
+    }
+
+    if (ferramenta === "analise_chi_quadrado") {
+      if (!colunaY || (colunasX.length !== 1 && colunasX.length !== 2)) {
+        exibirModalErro("O teste qui-quadrado requer uma coluna Y e uma ou duas colunas X. A segunda coluna X (opcional) será usada como frequência, se fornecida.");
+        return false;
+      }
+    }
+
+    if (ferramenta === "analise_descritiva" || ferramenta === "teste_normalidade") {
+      if (!colunaY) {
+        const msg = ferramenta === "analise_descritiva" ? 
+          "Selecione a coluna Y para a análise descritiva." : 
+          "Selecione a coluna Y para realizar o teste de normalidade.";
+        exibirModalErro(msg);
+        return false;
+      }
+    }
+
+    if (ferramenta === "regressao_multipla") {
+      if (!colunaY) {
+        exibirModalErro("Selecione a coluna Y para a regressão linear múltipla.");
+        return false;
+      }
+      if (colunasX.length < 2) {
+        exibirModalErro("Selecione pelo menos duas colunas X para a regressão linear múltipla.");
+        return false;
+      }
+    }
+
+    if (["regressao_logistica_binaria", "regressao_logistica_ordinal", "regressao_logistica_nominal"].includes(ferramenta)) {
+      if (!colunaY) {
+        exibirModalErro(`Selecione a coluna Y para a ${ferramenta.replace(/_/g, " ")}.`);
+        return false;
+      }
+      if (colunasX.length < 1) {
+        exibirModalErro("Selecione pelo menos uma coluna X.");
+        return false;
+      }
+    }
+
+    if (ferramenta === "analise_chi_quadrado") {
+      if (!colunaY || colunasX.length !== 1) {
+        exibirModalErro("O teste qui-quadrado requer uma coluna Y e uma coluna X, ambas categóricas.");
+        return false;
+      }
+    }
+
+
+    if (["teste_2sample_t", "teste_paired_t", "teste_variancias"].includes(ferramenta)) {
+      if (colunaY) {
+        exibirModalErro(`Não selecione a coluna Y para o ${ferramenta.replace(/_/g, " ").toUpperCase()}.`);
+        return false;
+      }
+      if (colunasX.length !== 2) {
+        exibirModalErro(`Selecione exatamente duas colunas X para o ${ferramenta.replace(/_/g, " ").toUpperCase()}.`);
+        return false;
+      }
+    }
+
+    if (ferramenta === "teste_anova") {
+      if (colunaY) {
+        exibirModalErro("Não selecione a coluna Y para o Teste ANOVA.");
+        return false;
+      }
+      if (colunasX.length < 2) {
+        exibirModalErro("Selecione pelo menos duas colunas X para o Teste ANOVA.");
+        return false;
+      }
+    }
+
+    if (grafico === "Grafico_barras_simples") {
+      if (colunaY) {
+        exibirModalErro("Não selecione a coluna Y para o Gráfico de Barras Simples.");
+        return false;
+      }
+      if (colunasX.length !== 1) {
+        exibirModalErro("Selecione exatamente uma coluna X para o Gráfico de Barras Simples.");
+        return false;
+      }
+    }
+
+    if (grafico === "grafico_bolhas") {
+      if (!colunaY || colunasX.length !== 2) {
+        exibirModalErro("O gráfico de bolhas requer uma coluna Y e duas colunas X (X e Tamanho).");
+        return false;
+      }
+    }
+
+    if (grafico === "grafico_pizza") {
+      if (!colunaY || colunasX.length !== 0) {
+        exibirModalErro("O gráfico de pizza requer exatamente uma coluna Y e nenhuma coluna X.");
+        return false;
+      }
+    }
+
+    if (grafico === "grafico_ic_media") {
+      if (!colunaY || colunasX.length !== 1) {
+        exibirModalErro("O gráfico de IC para média requer uma coluna Y (numérica) e uma coluna X (categórica).");
+        return false;
+      }
+    }
+
+    if (grafico === "grafico_linha_temporal") {
+      if (!colunaY || colunasX.length !== 1) {
+        exibirModalErro("O gráfico de série temporal requer uma coluna Y (numérica) e uma coluna X (datas, períodos ou números).");
+        return false;
+      }
+    }
+
+    if (ferramenta === "capabilidade_normal") {
+      if (!colunaY || colunasX.length !== 1) {
+        exibirModalErro("Para Capabilidade Normal, selecione uma coluna de dados (Y) e uma coluna com 1 ou 2 valores numéricos em X.");
+        return false;
+      }
+    }
+
+    
+
+    if (ferramenta === "capabilidade_nao_normal") {
+      if (!colunaY || colunasX.length !== 1) {
+        exibirModalErro("Para Capabilidade Não Normal, selecione uma coluna de dados (Y) e uma coluna com 1 ou 2 valores numéricos em X.");
+        return false;
+      }
+    }
+
+
+
+    if (ferramenta === "transformacao_johnson") {
+      if (!colunaY || colunasX.length !== 1) {
+        exibirModalErro("Para Transformação Johnson, selecione uma coluna de dados (Y) e uma coluna com 1 ou 2 valores numéricos em X.");
+        return false;
+      }
+    }
+
+    
+    if (grafico === "Grafico_barras_agrupado") {
+      if (colunasX.length !== 2) {
+        exibirModalErro("Selecione exatamente duas colunas no campo X para o Gráfico de Barras Agrupado.");
+        return false;
+      }
+    }
+
+    return true;
+  }
+</script>
