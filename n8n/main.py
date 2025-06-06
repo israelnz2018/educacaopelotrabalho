@@ -3,6 +3,14 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
+import traceback
+from pathlib import Path
+
+from leitura import ler_arquivo
+from suporte import interpretar_coluna
+from estatistica import ANALISES
+from graficos import GRAFICOS
+from agente import interpretar_analise
 
 app = FastAPI()
 
@@ -10,9 +18,16 @@ app = FastAPI()
 def healthcheck():
     return JSONResponse({"status": "ok"})
 
-# monta todos os arquivos de n8n/ como "/html_app/..."
-app.mount("/html_app", StaticFiles(directory=os.path.dirname(__file__)), name="html_app")
-templates = Jinja2Templates(directory=os.path.dirname(__file__))
+# monta todos os arquivos de dentro de n8n/ sob o prefixo "/n8n"
+pasta_raiz = Path(__file__).parent
+app.mount(
+    "/n8n",
+    StaticFiles(directory=pasta_raiz / "n8n"),
+    name="n8n_static"
+)
+
+# agora o Jinja2Templates deve olhar para "n8n/index.html"
+templates = Jinja2Templates(directory=str(pasta_raiz / "n8n"))
 
 @app.get("/", response_class=HTMLResponse)
 async def raiz(request: Request):
@@ -72,7 +87,6 @@ async def analisar(
             funcao = GRAFICOS.get(grafico.strip())
             if not funcao:
                 return JSONResponse(content={"erro": "Gráfico desconhecido."}, status_code=400)
-
             imagem_grafico_isolado_base64 = funcao(
                 df,
                 colunas_usadas,
@@ -104,6 +118,3 @@ async def analisar(
             },
             status_code=500
         )
-
-
-
