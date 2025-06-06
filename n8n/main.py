@@ -13,20 +13,24 @@ from graficos import GRAFICOS
 from agente import interpretar_analise  # ✅ Agente ativado
 
 app = FastAPI()
+
 @app.get("/healthz")
 def healthcheck():
     return JSONResponse(content={"status": "ok"})
 
+# 📁 Caminho correto para a pasta html_app dentro da pasta n8n
+html_path = os.path.join(os.path.dirname(__file__), "n8n", "html_app")
 
-# Monta a pasta html_app como estática para CSS, JS e outros
-app.mount("/html_app", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "html_app")), name="html_app")
+# 🎯 Monta a pasta html_app para servir arquivos estáticos (CSS, JS, etc.)
+app.mount("/html_app", StaticFiles(directory=html_path), name="html_app")
 
-# Configura o Jinja2 para usar a pasta html_app como templates
-templates = Jinja2Templates(directory="html_app")
+# 🧩 Configura o Jinja2 para usar os templates da pasta correta
+templates = Jinja2Templates(directory=html_path)
 
 @app.get("/", response_class=HTMLResponse)
 async def raiz(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
 
 @app.post("/analise")
 async def analisar(
