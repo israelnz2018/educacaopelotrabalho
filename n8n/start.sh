@@ -12,8 +12,10 @@ else
   exit 1
 fi
 
-echo "🚀 Iniciando servidor com uvicorn..."
-uvicorn n8n.main:app --host=0.0.0.0 --port=8000
+# ✅ Usa a variável de porta fornecida pelo Railway
+echo "🚀 Iniciando servidor com uvicorn na porta ${PORT}..."
+uvicorn n8n.main:app --host=0.0.0.0 --port=${PORT}
+
 
 
 
