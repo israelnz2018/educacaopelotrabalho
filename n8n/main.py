@@ -6,12 +6,12 @@ import os
 import traceback
 from pathlib import Path
 
-# ← Aqui: prefixamos todos os imports com "n8n."
-from n8n.leitura import ler_arquivo
-from n8n.suporte import interpretar_coluna
-from n8n.estatistica import ANALISES
-from n8n.graficos import GRAFICOS
-from n8n.agente import interpretar_analise
+# ← Aqui: imports sem prefixo "n8n."
+from leitura import ler_arquivo
+from suporte import interpretar_coluna
+from estatistica import ANALISES
+from graficos import GRAFICOS
+from agente import interpretar_analise
 
 app = FastAPI()
 
@@ -19,16 +19,18 @@ app = FastAPI()
 def healthcheck():
     return JSONResponse({"status": "ok"})
 
-# monta todos os arquivos de dentro de n8n/ sob o prefixo "/n8n"
+# Ajuste: pasta_raiz agora é /app/n8n (por causa do `cd /app/n8n` no start.sh)
 pasta_raiz = Path(__file__).parent
+
+# Monta todos os arquivos dentro de /app/n8n (index.html e ArquivoXX.html) em "/n8n"
 app.mount(
     "/n8n",
-    StaticFiles(directory=pasta_raiz / "n8n"),
+    StaticFiles(directory=pasta_raiz),
     name="n8n_static"
 )
 
-# agora o Jinja2Templates deve olhar para "n8n/index.html"
-templates = Jinja2Templates(directory=str(pasta_raiz / "n8n"))
+# Ajuste: Templates também apontam para /app/n8n
+templates = Jinja2Templates(directory=str(pasta_raiz))
 
 @app.get("/", response_class=HTMLResponse)
 async def raiz(request: Request):
