@@ -4,10 +4,12 @@ WORKDIR /app/n8n
 
 COPY . /app/n8n
 
-RUN pip install --upgrade pip \
+RUN chmod +x start.sh \
+ && pip install --upgrade pip \
  && pip install -r /app/n8n/requirements.txt
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["./start.sh"]
+
 
 
 
