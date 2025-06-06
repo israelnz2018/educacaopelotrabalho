@@ -2,30 +2,22 @@ from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import pandas as pd
-import traceback
 import os
-
-from leitura import ler_arquivo
-from suporte import interpretar_coluna
-from estatistica import ANALISES
-from graficos import GRAFICOS
-from agente import interpretar_analise  # ✅ Agente ativado
 
 app = FastAPI()
 
 @app.get("/healthz")
 def healthcheck():
-    return JSONResponse(content={"status": "ok"})
+    return JSONResponse({"status": "ok"})
 
-# Serve TODO o conteúdo da pasta 'n8n' sob o prefixo "/html"
-static_path = os.path.dirname(__file__)
-app.mount("/html", StaticFiles(directory=static_path), name="static")
-templates = Jinja2Templates(directory=static_path)
+# monta todos os arquivos de n8n/ como "/html_app/..."
+app.mount("/html_app", StaticFiles(directory=os.path.dirname(__file__)), name="html_app")
+templates = Jinja2Templates(directory=os.path.dirname(__file__))
 
 @app.get("/", response_class=HTMLResponse)
 async def raiz(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
 
 @app.post("/analise")
 async def analisar(
