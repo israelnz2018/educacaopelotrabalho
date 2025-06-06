@@ -1,14 +1,15 @@
 FROM python:3.11-slim
 
-WORKDIR /app/n8n
+WORKDIR /app
 
-COPY . /app/n8n
+COPY ./ /app
 
 RUN chmod +x start.sh \
  && pip install --upgrade pip \
- && pip install -r /app/n8n/requirements.txt
+ && pip install -r requirements.txt
 
-CMD ["./start.sh"]
+ENTRYPOINT ["sh", "./start.sh"]
+
 
 
 
