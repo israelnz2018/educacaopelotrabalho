@@ -19,7 +19,7 @@ def healthcheck():
     return JSONResponse(content={"status": "ok"})
 
 # 📁 Caminho correto para a pasta html_app dentro da pasta n8n
-html_path = os.path.join(os.path.dirname(__file__), "n8n", "html_app")
+html_path = os.path.join(os.path.dirname(__file__), "html_app")
 
 # 🎯 Monta a pasta html_app para servir arquivos estáticos (CSS, JS, etc.)
 app.mount("/html_app", StaticFiles(directory=html_path), name="html_app")
