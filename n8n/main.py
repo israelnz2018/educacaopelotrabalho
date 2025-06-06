@@ -2,6 +2,8 @@ from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+import pandas as pd
+import traceback
 import os
 
 from leitura import ler_arquivo
@@ -24,18 +26,6 @@ templates = Jinja2Templates(directory=static_path)
 @app.get("/", response_class=HTMLResponse)
 async def raiz(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
-
-@app.post("/analise")
-async def analisar(
-    request: Request,
-    arquivo: UploadFile = File(None),
-    ferramenta: str = Form(None),
-    grafico: str = Form(None),
-    coluna_y: str = Form(None),
-    colunas_x: str | list[str] = Form(None)
-):
-    # ... (o resto do código permanece igual)
-
 
 @app.post("/analise")
 async def analisar(
