@@ -6,11 +6,12 @@ import os
 import traceback
 from pathlib import Path
 
-from leitura import ler_arquivo
-from suporte import interpretar_coluna
-from estatistica import ANALISES
-from graficos import GRAFICOS
-from agente import interpretar_analise
+# ← Aqui: prefixamos todos os imports com "n8n."
+from n8n.leitura import ler_arquivo
+from n8n.suporte import interpretar_coluna
+from n8n.estatistica import ANALISES
+from n8n.graficos import GRAFICOS
+from n8n.agente import interpretar_analise
 
 app = FastAPI()
 
@@ -32,7 +33,6 @@ templates = Jinja2Templates(directory=str(pasta_raiz / "n8n"))
 @app.get("/", response_class=HTMLResponse)
 async def raiz(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
-
 
 @app.post("/analise")
 async def analisar(
@@ -118,3 +118,4 @@ async def analisar(
             },
             status_code=500
         )
+
