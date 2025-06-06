@@ -1,1 +1,52 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Learning by Working</title>
+
+  <!-- SlimSelect (Dropdown estilizado) -->
+  <link href="https://cdn.jsdelivr.net/npm/slim-select@2.6.0/dist/slimselect.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/slim-select@2.6.0/dist/slimselect.min.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    const arquivos = [
+      "/html_app/Arquivo01.html", // estilo (irá para o <head>)
+      "/html_app/Arquivo02.html",
+      "/html_app/Arquivo03.html",
+      "/html_app/Arquivo04.html",
+      "/html_app/Arquivo05.html",
+      "/html_app/Arquivo06.html"
+    ];
+
+    async function carregarArquivos() {
+      const container = document.getElementById("app");
+
+      for (const nome of arquivos) {
+        const resposta = await fetch(nome);
+        const conteudo = await resposta.text();
+
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = conteudo;
+
+        Array.from(tempDiv.childNodes).forEach(node => {
+          if (node.tagName === "SCRIPT") {
+            const script = document.createElement("script");
+            script.textContent = node.textContent;
+            document.body.appendChild(script);
+          } else if (node.tagName === "STYLE") {
+            document.head.appendChild(node); // 👉 CSS vai para o <head>
+          } else {
+            container.appendChild(node);     // 👉 HTML vai para a #app
+          }
+        });
+      }
+    }
+
+    carregarArquivos();
+  </script>
+</body>
+</html>
