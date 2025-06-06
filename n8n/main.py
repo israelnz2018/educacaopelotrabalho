@@ -2,31 +2,17 @@ from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import pandas as pd
-import traceback
 import os
-
-from leitura import ler_arquivo
-from suporte import interpretar_coluna
-from estatistica import ANALISES
-from graficos import GRAFICOS
-from agente import interpretar_analise  # ✅ Agente ativado
 
 app = FastAPI()
 
 @app.get("/healthz")
 def healthcheck():
-    return JSONResponse(content={"status": "ok"})
+    return JSONResponse({"status": "ok"})
 
-# 📁 Caminho correto: raiz do projeto
-static_path = os.path.dirname(__file__)
-
-# 🎯 Monta a própria pasta como raiz estática (sem /html_app)
-app.mount("/", StaticFiles(directory=static_path), name="static")
-
-# 🧩 Templates também na pasta atual
-templates = Jinja2Templates(directory=static_path)
-
+# monta todos os arquivos de n8n/ como "/html_app/..."
+app.mount("/html_app", StaticFiles(directory=os.path.dirname(__file__)), name="html_app")
+templates = Jinja2Templates(directory=os.path.dirname(__file__))
 
 @app.get("/", response_class=HTMLResponse)
 async def raiz(request: Request):
