@@ -24,9 +24,22 @@
       Sair
     </button>
 
-    <!-- 🧠 Prompt -->
-    <label for="prompt">Prompt</label>
-    <input type="text" id="prompt" name="prompt" disabled />
+    <!-- 🧠 Prompt com botão "Perguntar" ao lado -->
+    <div style="display: flex; gap: 10px; align-items: end; margin-bottom: 20px;">
+      <div style="flex: 1;">
+        <label for="prompt">Prompt</label>
+        <input type="text" id="prompt" name="prompt" disabled style="width: 100%;" />
+      </div>
+      <div style="margin-top: 24px;">
+        <button id="botao-perguntar" type="button"
+          style="background-color: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; height: 38px; cursor: pointer;"
+          disabled>
+          Perguntar
+        </button>
+      </div>
+    </div>
+
+
 
     <!-- 🕽️ Dropdowns -->
     <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
