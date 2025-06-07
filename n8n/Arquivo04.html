@@ -31,7 +31,7 @@
     formData.append("senha", senha);
 
     try {
-      const resposta = await fetch('https://primary-nita-production.up.railway.app/webhook/Agente-gpt', {
+      const resposta = await fetch('https://primary-nita-production.up.railway.app/webhook/senha', {
         method: "POST",
         body: formData
       });
