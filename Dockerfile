@@ -8,7 +8,7 @@ RUN pip install --upgrade pip \
 
 # 2) Copia seu código (FastAPI + HTMLs + start.sh)
 COPY n8n/ /app/n8n/
-COPY start.sh /app/start.sh
+COPY n8n/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
 # 3) Instala Node.js e a CLI do n8n
