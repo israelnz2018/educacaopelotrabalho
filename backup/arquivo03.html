@@ -28,10 +28,7 @@
   async function enviarFormulario(event) {
     event.preventDefault();
 
-    // 🛑 Verifica campos obrigatórios
-    if (!validarCamposSelecionados()) {
-      return;
-    }
+    if (!validarCamposSelecionados()) return;
 
     const spinner = document.getElementById('spinner');
     spinner.style.display = "inline-block";
@@ -41,9 +38,8 @@
     formData.delete('senha');
 
     const containerAnalise = document.getElementById('analise');
-    // 🧠 Marca a análise anterior como “última”
     marcarUltimaAnalise();
-    // 🔄 Remove o carregando antigo, se existir
+
     const carregandoExistente = document.getElementById('carregando-analise');
     if (carregandoExistente) carregandoExistente.remove();
 
@@ -98,4 +94,50 @@
       spinner.style.display = "none";
     }
   }
+
+  // 🧠 Botão “Perguntar” envia pergunta ao Agente com base na última análise
+  async function perguntarIA() {
+    const pergunta = document.getElementById("prompt").value.trim();
+    if (!pergunta) return;
+
+    const ultima = document.querySelector(".analise-completa");
+    if (!ultima) {
+      alert("⚠️ Nenhuma análise encontrada.");
+      return;
+    }
+
+    const textoHTML = ultima.querySelector(".analise-texto")?.innerHTML || "";
+    const textoPlano = textoHTML
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/?[^>]+(>|$)/g, "")
+      .trim();
+
+    const promptCompleto = `Com base nesta análise:\n\n${textoPlano}\n\nResponda à pergunta:\n\n${pergunta}`;
+
+    const containerAnalise = document.getElementById("analise");
+    const blocoPergunta = document.createElement("div");
+    blocoPergunta.className = "pergunta-resposta";
+    blocoPergunta.style.marginBottom = "24px";
+    blocoPergunta.style.border = "1px dashed #007bff";
+    blocoPergunta.style.padding = "12px";
+    blocoPergunta.style.backgroundColor = "#f8faff";
+
+    blocoPergunta.innerHTML = `<strong>Pergunta:</strong> ${pergunta}<br><em>Carregando resposta...</em>`;
+    containerAnalise.prepend(blocoPergunta);
+
+    try {
+      const resposta = await fetch("https://learningbyworking.app.n8n.cloud/webhook-test/Agente-gpt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: promptCompleto })
+      });
+
+      const json = await resposta.json();
+      const respostaIA = json?.analise || "❌ Não foi possível obter resposta.";
+      blocoPergunta.innerHTML = `<strong>Pergunta:</strong> ${pergunta}<br><strong>Resposta:</strong> ${respostaIA.replace(/\n/g, "<br>")}`;
+    } catch (erro) {
+      blocoPergunta.innerHTML = `<strong>Pergunta:</strong> ${pergunta}<br><span style="color:red;">❌ Erro: ${erro.message}</span>`;
+    }
+  }
 </script>
+
