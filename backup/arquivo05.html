@@ -110,4 +110,20 @@
     }
   }
 
+  function marcarUltimaAnalise() {
+    const container = document.getElementById('analise');
+
+    // Remove a marca anterior, se existir
+    const antiga = container.querySelector('.ultima-analise');
+    if (antiga) {
+      antiga.classList.remove('ultima-analise');
+    }
+
+    // Marca o primeiro filho (análise mais recente)
+    const nova = container.firstElementChild;
+    if (nova) {
+      nova.classList.add('ultima-analise');
+    }
+  }
+  
 </script>
