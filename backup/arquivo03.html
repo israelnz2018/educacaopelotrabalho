@@ -41,6 +41,9 @@
     formData.delete('senha');
 
     const containerAnalise = document.getElementById('analise');
+    // 🧠 Marca a análise anterior como “última”
+    marcarUltimaAnalise();
+    // 🔄 Remove o carregando antigo, se existir
     const carregandoExistente = document.getElementById('carregando-analise');
     if (carregandoExistente) carregandoExistente.remove();
 
