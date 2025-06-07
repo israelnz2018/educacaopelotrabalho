@@ -98,4 +98,16 @@
     const modal = document.getElementById("modal-erro");
     if (modal) modal.style.display = "none";
   }
+
+  function marcarUltimaAnalise() {
+    const analises = document.querySelectorAll("#analise > div");
+    if (analises.length > 0) {
+      // Remove ID antigo, se existir
+      document.querySelectorAll("#ultima-analise").forEach(el => el.removeAttribute("id"));
+
+      // Marca o bloco mais recente
+      analises[0].id = "ultima-analise";
+    }
+  }
+
 </script>
